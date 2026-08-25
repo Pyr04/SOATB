@@ -82,7 +82,7 @@
     
     <div class="reader-layout">
         
-        <!-- LEVÝ PANEL S OBSAHEM (OSNOVA) -->
+        <!-- LEVÝ PANEL S OBSAHEM  -->
         <nav class="reader-sidebar">
             <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Zpět do výcvikového centra</a>
             
@@ -136,7 +136,7 @@
     </div>
 
     <script>
-        // Ochrana, aby se sem nedostal nepřihlášený uživatel
+        // Ochrana
         const prihlaseny = JSON.parse(sessionStorage.getItem('prihlasenyRekrut'));
         if (!prihlaseny) {
             window.location.href = 'login.html';

@@ -128,7 +128,7 @@
             });
         }
 
-        // NOVÉ: Načítání materiálů
+        //Načítání materiálů
         function nactiMaterialy() {
             const kontejner = document.getElementById('seznam-materialu');
             fetch('/api/materialy').then(res => res.json()).then(materialy => {

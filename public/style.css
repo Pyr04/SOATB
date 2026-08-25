@@ -1,22 +1,22 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-    /* Paleta inspirovaná systémem SPEAR */
-    --bg-body: #09090b;       /* Úplně tmavé pozadí webu */
-    --bg-panel: #121214;      /* O chloupek světlejší pro karty/panely */
-    --bg-input: #000000;      /* Černé pole pro formuláře */
-    --border-color: #27272a;  /* Velmi jemné, tmavě šedé linky */
     
-    --text-bright: #ffffff;   /* Zářivě bílá pro nadpisy a tabulky */
-    --text-normal: #e4e4e7;   /* Světle šedá pro běžný text */
-    --text-muted: #a1a1aa;    /* Ztlumená šedá pro popisky a menu */
+    --bg-body: #09090b;       
+    --bg-panel: #121214;      
+    --bg-input: #000000;      
+    --border-color: #27272a;  
     
-    /* Akcentní barvy podle fotek */
-    --color-primary: #2563eb;       /* Modrá (jako tlačítko "Vytvořit") */
+    --text-bright: #ffffff;   
+    --text-normal: #e4e4e7;   
+    --text-muted: #a1a1aa;    
+    
+    
+    --color-primary: #2563eb;       
     --color-primary-hover: #1d4ed8;
-    --color-success: #16a34a;       /* Zelená pro schváleno/splněno */
-    --color-danger: #dc2626;        /* Červená pro mazání/nesplněno */
-    --color-warning: #ca8a04;       /* Žlutá/Oranžová pro čekající akce */
+    --color-success: #16a34a;       
+    --color-danger: #dc2626;        
+    --color-warning: #ca8a04;       
 }
 
 /* --- ZÁKLAD --- */
@@ -152,12 +152,12 @@ tr:hover td {
 
 
 .sidebar {
-    position: sticky;   /* Připevní prvek k oknu prohlížeče */
-    
-    top: 0;            /* Zarovnání úplně nahoru */
-    overflow: hidden;         /* Zarovnání úplně doleva */
-    width: 250px;      /* Zde si nastav šířku podle sebe */
-    height: 100vh;     /* Roztáhne sidebar na 100 % výšky obrazovky */
+    position: sticky;   
+
+    top: 0;            
+    overflow: hidden;        
+    width: 250px;     
+    height: 100vh;     
       
     
 
@@ -168,8 +168,8 @@ tr:hover td {
 
 
 .vycvikove-centrum-btn {
-    margin-top: auto;  /* Toto automaticky odtlačí tlačítko na úplné dno sidebaru */
-    margin-bottom: 20px; /* Jen abys neměl tlačítko úplně nalepené na spodním okraji monitoru */
+    margin-top: auto;  
+    margin-bottom: 20px; 
 }
 
 .sidebar-hlavicka { 
@@ -236,7 +236,7 @@ tr:hover td {
 .sekce-obsah { display: none; }
 .sekce-obsah.aktivni { display: block; animation: fadeIn 0.2s ease-out; }
 
-/* --- DROPDOWN MENU (Tři tečky) --- */
+/* --- DROPDOWN MENU --- */
 .dropdown {
     position: relative;
     display: inline-block;
