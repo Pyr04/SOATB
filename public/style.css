@@ -150,13 +150,26 @@ tr:hover td {
     background-color: var(--bg-body); 
 }
 
-.sidebar { 
-    width: 260px; 
-    background-color: #0a0a0c; 
-    border-right: 1px solid var(--border-color); 
-    display: flex; 
+
+.sidebar {
+    position: sticky;   /* Připevní prvek k oknu prohlížeče */
+    
+    top: 0;            /* Zarovnání úplně nahoru */
+    overflow: hidden;         /* Zarovnání úplně doleva */
+    width: 250px;      /* Zde si nastav šířku podle sebe */
+    height: 100vh;     /* Roztáhne sidebar na 100 % výšky obrazovky */
+      
+    
+
+    display: flex;
     flex-direction: column; 
-    padding-top: 20px;
+    justify-content: space-between;
+}
+
+
+.vycvikove-centrum-btn {
+    margin-top: auto;  /* Toto automaticky odtlačí tlačítko na úplné dno sidebaru */
+    margin-bottom: 20px; /* Jen abys neměl tlačítko úplně nalepené na spodním okraji monitoru */
 }
 
 .sidebar-hlavicka { 
@@ -172,6 +185,8 @@ tr:hover td {
     margin: 20px 20px 8px 20px;
     letter-spacing: 0.5px;
 }
+
+
 
 .tab-btn {
     width: 100%;
