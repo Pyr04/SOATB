@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>SOATB - Přihlášení do systému</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body style="display: flex; justify-content: center; align-items: center; height: 100vh; background-image: radial-gradient(circle at top right, #121214, #09090b);">
+    
+    <div class="karta" style="width: 100%; max-width: 400px; padding: 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.8);">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <img src="logo.png" alt="160th SOAR Logo" style="width: 80px; margin-bottom: 15px;">
+            <h2 style="border: none; margin: 0; font-size: 24px;">Autentizace</h2>
+            <p style="color: var(--text-muted); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px;">Secure Access Portal</p>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Přihlašovací jméno (Login)</label>
+                <!-- Zde je doplněn chybějící styl pro stoprocentní šířku -->
+                <input type="text" id="loginName" required style="width: 100%; box-sizing: border-box; padding: 12px 16px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-normal); border-radius: 8px; font-family: 'Inter', sans-serif;">
+            </div>
+            <div class="form-group" style="margin-bottom: 30px;">
+                <label>Bezpečnostní heslo</label>
+                <input type="password" id="loginPass" required style="width: 100%; box-sizing: border-box; padding: 12px 16px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-normal); border-radius: 8px; font-family: 'Inter', sans-serif;">
+            </div>
+            
+            <p id="chyba-msg" style="color: var(--color-danger); display: none; text-align: center; font-size: 14px; margin-bottom: 15px;"></p>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 16px;">Vstoupit do portálu</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const login = document.getElementById('loginName').value;
+            const heslo = document.getElementById('loginPass').value;
+            const msgBox = document.getElementById('chyba-msg');
+            msgBox.style.display = 'none';
+
+            fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login: login, heslo: heslo })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.uspech) {
+                    sessionStorage.setItem('prihlasenyRekrut', JSON.stringify(data.rekrut));
+                    window.location.href = 'index.html'; 
+                } else {
+                    msgBox.innerText = data.chyba;
+                    msgBox.style.display = 'block';
+                }
+            })
+            .catch(err => {
+                msgBox.innerText = "Chyba komunikace se serverem.";
+                msgBox.style.display = 'block';
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>SOATB - Čtení materiálu</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Speciální úpravy čistě pro rozvržení čtečky */
+        html { scroll-behavior: smooth; } /* Plynulé scrollování na kotvy */
+        
+        .reader-layout { 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden; 
+            background-color: var(--bg-body); 
+        }
+        
+        /* Levý panel s osnovou */
+        .reader-sidebar { 
+            width: 300px; 
+            background-color: var(--bg-panel); 
+            border-right: 1px solid var(--border-color); 
+            overflow-y: auto; 
+            padding: 30px 20px; 
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Pravá část se samotným textem */
+        .reader-content { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 60px 40px; 
+        }
+        
+        .reader-content-inner { 
+            max-width: 800px; 
+            margin: 0 auto; 
+        }
+        
+        /* Odkazy v levém menu */
+        .toc-link { 
+            display: block; 
+            color: var(--text-muted); 
+            text-decoration: none; 
+            padding: 10px 15px; 
+            margin-bottom: 5px; 
+            border-radius: 6px; 
+            transition: all 0.2s; 
+            font-size: 14px; 
+            border-left: 2px solid transparent;
+        }
+        
+        .toc-link:hover { 
+            background: rgba(255,255,255,0.03); 
+            color: var(--text-bright); 
+            border-left: 2px solid var(--text-muted);
+        }
+        
+        .back-btn { 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 10px; 
+            color: var(--text-muted); 
+            text-decoration: none; 
+            margin-bottom: 40px; 
+            font-size: 14px; 
+            font-weight: 500;
+            transition: 0.2s; 
+        }
+        .back-btn:hover { color: #fff; }
+        
+        /* Typografie pro samotný text (aby se to dobře četlo) */
+        .reader-content h1 { font-size: 32px; color: #bfae95; margin-bottom: 10px; }
+        .reader-content h2 { font-size: 22px; color: #fff; margin-top: 50px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .reader-content p { font-size: 16px; line-height: 1.7; color: var(--text-normal); margin-bottom: 20px; text-align: justify; }
+        .reader-content ul { color: var(--text-normal); line-height: 1.7; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    
+    <div class="reader-layout">
+        
+        <!-- LEVÝ PANEL S OBSAHEM (OSNOVA) -->
+        <nav class="reader-sidebar">
+            <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Zpět do výcvikového centra</a>
+            
+            <h3 style="color: var(--text-bright); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">Osnova dokumentu</h3>
+            
+            <div id="toc">
+                <!-- Odkazy pomocí # míří na konkrétní ID nadpisu v textu -->
+                <a href="#kapitola-1" class="toc-link">1. Úvod do formací</a>
+                <a href="#kapitola-2" class="toc-link">2. Standardní operační postupy</a>
+                <a href="#kapitola-3" class="toc-link">3. Komunikace (Brevity)</a>
+                <a href="#kapitola-4" class="toc-link">4. Nouzové situace</a>
+            </div>
+        </nav>
+        
+        <!-- PRAVÝ PANEL S TEXTEM -->
+        <main class="reader-content">
+            <div class="reader-content-inner">
+                
+                <span style="color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Oficiální manuál 160th SOAR</span>
+                <h1>Základy letu a formace</h1>
+                <p style="color: var(--text-muted); font-size: 18px; margin-bottom: 50px;">Tento dokument slouží jako základní studijní materiál pro všechny nové piloty (WOC). Obsahuje pravidla letu a chování v bojových formacích.</p>
+                
+                <!-- Kapitolám dáváme id="", na které pak míří odkazy z levého menu -->
+                <h2 id="kapitola-1">1. Úvod do formací</h2>
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+                
+                <h2 id="kapitola-2">2. Standardní operační postupy</h2>
+                <p>Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida.</p>
+                <ul>
+                    <li>První bod standardního postupu (SOP)</li>
+                    <li>Druhý klíčový bod pro udržení bezpečné vzdálenosti</li>
+                    <li>Třetí bod týkající se letových hladin</li>
+                </ul>
+                <p>Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante.</p>
+                <p>Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.</p>
+
+                <h2 id="kapitola-3">3. Komunikace (Brevity)</h2>
+                <p>Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus. Phasellus ultrices nulla quis nibh. Quisque a lectus. Donec consectetuer ligula vulputate sem tristique cursus.</p>
+                <p>Nam nulla quam, gravida non, commodo a, sodales sit amet, nisi. Pellentesque fermentum dolor. Aliquam quam lectus, facilisis auctor, ultrices ut, elementum vulputate, nunc.</p>
+                <p>Sed adipiscing ornare risus. Morbi est est, blandit sit amet, sagittis vel, euismod vel, velit. Pellentesque egestas sem. Suspendisse commodo ullamcorper magna.</p>
+
+                <h2 id="kapitola-4">4. Nouzové situace</h2>
+                <p>Praesent dapibus, neque id cursus faucibus, tortor neque egestas augue, eu vulputate magna eros eu erat. Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus.</p>
+                <p>Phasellus ultrices nulla quis nibh. Quisque a lectus. Donec consectetuer ligula vulputate sem tristique cursus. Nam nulla quam, gravida non, commodo a, sodales sit amet, nisi. Pellentesque fermentum dolor. Aliquam quam lectus, facilisis auctor, ultrices ut, elementum vulputate, nunc.</p>
+                
+                <div style="height: 400px;"></div> <!-- Jen prázdné místo, aby se dalo pohodlně doscrollovat až dolů a ukázal se ten skok na kapitolu 4 -->
+            </div>
+        </main>
+        
+    </div>
+
+    <script>
+        // Ochrana, aby se sem nedostal nepřihlášený uživatel
+        const prihlaseny = JSON.parse(sessionStorage.getItem('prihlasenyRekrut'));
+        if (!prihlaseny) {
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

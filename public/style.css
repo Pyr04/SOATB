@@ -1,0 +1,351 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    /* Paleta inspirovaná systémem SPEAR */
+    --bg-body: #09090b;       /* Úplně tmavé pozadí webu */
+    --bg-panel: #121214;      /* O chloupek světlejší pro karty/panely */
+    --bg-input: #000000;      /* Černé pole pro formuláře */
+    --border-color: #27272a;  /* Velmi jemné, tmavě šedé linky */
+    
+    --text-bright: #ffffff;   /* Zářivě bílá pro nadpisy a tabulky */
+    --text-normal: #e4e4e7;   /* Světle šedá pro běžný text */
+    --text-muted: #a1a1aa;    /* Ztlumená šedá pro popisky a menu */
+    
+    /* Akcentní barvy podle fotek */
+    --color-primary: #2563eb;       /* Modrá (jako tlačítko "Vytvořit") */
+    --color-primary-hover: #1d4ed8;
+    --color-success: #16a34a;       /* Zelená pro schváleno/splněno */
+    --color-danger: #dc2626;        /* Červená pro mazání/nesplněno */
+    --color-warning: #ca8a04;       /* Žlutá/Oranžová pro čekající akce */
+}
+
+/* --- ZÁKLAD --- */
+body {
+    background-color: var(--bg-body);
+    color: var(--text-normal);
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+}
+
+h1, h2, h3 {
+    color: var(--text-bright);
+    font-weight: 600;
+    margin-top: 0;
+    letter-spacing: -0.02em;
+}
+
+h2 { font-size: 20px; margin-bottom: 24px; }
+h3 { font-size: 16px; margin-bottom: 16px; }
+
+/* --- KARTY (PANELY) --- */
+.karta {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+/* --- TLAČÍTKA --- */
+.btn {
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid transparent;
+    cursor: pointer;
+    display: inline-block;
+    text-decoration: none;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-primary { background-color: var(--color-primary); color: white; }
+.btn-primary:hover { background-color: var(--color-primary-hover); }
+
+.btn-danger { background-color: transparent; border-color: var(--color-danger); color: var(--color-danger); }
+.btn-danger:hover { background-color: rgba(220, 38, 38, 0.1); }
+
+.btn-nav { background-color: var(--bg-panel); color: var(--text-normal); border-color: var(--border-color); margin: 20px; }
+.btn-nav:hover { background-color: rgba(255, 255, 255, 0.05); color: var(--text-bright); }
+
+/* --- BADGES (Štítky statusů - Schváleno, Čeká atd.) --- */
+.badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+    text-align: center;
+}
+.badge-success { background: rgba(22, 163, 74, 0.15); color: #4ade80; border: 1px solid rgba(22, 163, 74, 0.2); }
+.badge-warning { background: rgba(202, 138, 4, 0.15); color: #facc15; border: 1px solid rgba(202, 138, 4, 0.2); }
+.badge-default { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border: 1px dashed var(--border-color); }
+
+/* --- FORMULÁŘE --- */
+.form-group { margin-bottom: 20px; }
+.form-group label { 
+    display: block; 
+    margin-bottom: 8px; 
+    color: var(--text-muted); 
+    font-size: 12px; 
+    text-transform: uppercase; 
+    font-weight: 600; 
+    letter-spacing: 0.5px;
+}
+
+input[type="text"], input[type="password"], select {
+    width: 100%;
+    padding: 12px 16px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: var(--text-normal);
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-size: 14px;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+}
+
+input[type="text"]:focus, input[type="password"]:focus, select:focus {
+    border-color: var(--color-primary);
+    outline: none;
+    box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+input[type="radio"] { accent-color: var(--color-primary); transform: scale(1.2); margin-right: 10px; cursor: pointer; }
+
+/* --- TABULKY --- */
+table { 
+    width: 100%; 
+    border-collapse: collapse; 
+}
+th { 
+    padding: 12px 16px; 
+    color: var(--text-muted); 
+    font-size: 11px; 
+    text-transform: uppercase; 
+    font-weight: 600; 
+    border-bottom: 1px solid var(--border-color); 
+    letter-spacing: 0.5px;
+    text-align: left; 
+}
+td { 
+    padding: 16px; 
+    border-bottom: 1px solid var(--border-color); 
+    vertical-align: middle; 
+    font-size: 14px; 
+    text-align: left; 
+}
+tr:hover td { 
+    background-color: rgba(255, 255, 255, 0.02); 
+}
+
+/* --- LAYOUT A POSTRANNÍ PANEL (SPEAR DESIGN) --- */
+.veleni-layout { 
+    display: flex; 
+    min-height: 100vh; 
+    background-color: var(--bg-body); 
+}
+
+.sidebar { 
+    width: 260px; 
+    background-color: #0a0a0c; 
+    border-right: 1px solid var(--border-color); 
+    display: flex; 
+    flex-direction: column; 
+    padding-top: 20px;
+}
+
+.sidebar-hlavicka { 
+    padding: 0 20px 10px 20px; 
+    text-align: left; 
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.sidebar-kategorie {
+    color: #bfae95; 
+    font-size: 14px;
+    font-weight: 600;
+    margin: 20px 20px 8px 20px;
+    letter-spacing: 0.5px;
+}
+
+.tab-btn {
+    width: 100%;
+    margin: 0;
+    padding: 10px 20px;
+    background: transparent;
+    border: none;
+    color: #d1d5db;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.tab-btn i {
+    width: 18px;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+.tab-btn:hover { 
+    background-color: rgba(255, 255, 255, 0.03); 
+    color: #ffffff; 
+}
+
+.tab-btn:hover i {
+    color: #ffffff;
+}
+
+.tab-btn.aktivni { 
+    background-color: rgba(255, 255, 255, 0.05); 
+    color: #ffffff; 
+    border-left: 2px solid #bfae95;
+    padding-left: 18px; 
+}
+
+.tab-btn.aktivni i {
+    color: #bfae95; 
+}
+
+.obsah-panelu { flex-grow: 1; padding: 40px; }
+.sekce-obsah { display: none; }
+.sekce-obsah.aktivni { display: block; animation: fadeIn 0.2s ease-out; }
+
+/* --- DROPDOWN MENU (Tři tečky) --- */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 2px 10px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.dropdown-btn:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-bright);
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background-color: var(--bg-body);
+    min-width: 170px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: 0px 10px 25px rgba(0,0,0,0.8);
+    z-index: 100;
+    overflow: hidden;
+}
+
+.dropdown-content.show {
+    display: block;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.dropdown-header {
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-color);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dropdown-item {
+    color: var(--text-normal);
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    font-size: 13px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+    color: var(--text-bright);
+}
+
+.dropdown-item.danger {
+    color: var(--color-danger);
+}
+
+.dropdown-item.danger:hover {
+    background-color: rgba(220, 38, 38, 0.1);
+}
+
+
+
+
+
+
+
+/* --- ANIMACE --- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- VYSKAKOVACÍ OKNO PRO DETAIL HISTORIE --- */
+.modal-overlay {
+    display: none; 
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); 
+    z-index: 1000; 
+    justify-content: center; align-items: center;
+    backdrop-filter: blur(4px);
+}
+.modal-content {
+    background: var(--bg-panel); border: 1px solid var(--border-color);
+    padding: 30px; border-radius: 8px; width: 90%; max-width: 650px;
+    max-height: 85vh; overflow-y: auto; position: relative;
+    box-shadow: 0 20px 50px rgba(0,0,0,1);
+}
+.modal-close {
+    position: absolute; top: 15px; right: 20px; background: none; border: none;
+    color: var(--text-muted); font-size: 20px; cursor: pointer; transition: all 0.2s;
+}
+.modal-close:hover { color: var(--color-danger); }
+
+
+#preview-obrazky {
+    display: grid;
+    gap: 12px;
+    margin-top: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+#preview-obrazky img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}

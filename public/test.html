@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>SOATB - Zkouška</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body style="display: flex; justify-content: center; padding-top: 60px;">
+    
+    <div class="karta" style="width: 100%; max-width: 650px;">
+        <h2 id="nadpis-testu" style="border: none; margin-bottom: 10px;">Načítám zadání...</h2>
+        <hr style="border: none; border-top: 1px solid var(--border-color); margin-bottom: 24px;">
+        
+        <form id="testForm">
+            <div id="otazky-kontejner"></div>
+            <button type="submit" id="btn-odeslat" class="btn btn-primary" style="display: none; width: 100%; padding: 14px; font-size: 16px; margin-top: 30px;">Odeslat k vyhodnocení</button>
+        </form>
+    </div>
+    
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const idRekruta = urlParams.get('id_rekruta');
+        const idTestu = urlParams.get('id_testu');
+
+        if (!idRekruta || !idTestu) {
+            document.getElementById('nadpis-testu').innerText = "Chyba: Chybí identifikace testu.";
+        } else {
+            document.getElementById('nadpis-testu').innerText = `Certifikační zkouška (Modul #${idTestu})`;
+            
+            fetch(`/api/testy/${idTestu}/otazky`)
+                .then(res => res.json())
+                .then(otazky => {
+                    const kontejner = document.getElementById('otazky-kontejner');
+                    
+                    if (otazky.length === 0) {
+                        kontejner.innerHTML = '<p style="color: var(--color-danger);">Velení do tohoto modulu ještě nepřidalo žádné otázky.</p>';
+                        return;
+                    }
+
+                    otazky.forEach((otazka, index) => {
+                        kontejner.innerHTML += `
+                            <div class="form-group" style="background-color: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                <p style="color: var(--text-bright); font-size: 16px; font-weight: 500; margin-top: 0; margin-bottom: 15px;">${index + 1}. ${otazka.zneni}</p>
+                                <label style="display: block; margin-bottom: 10px; color: var(--text-normal); cursor: pointer; text-transform: none; font-weight: 400; font-size: 14px;">
+                                    <input type="radio" name="q_${otazka.id}" value="a" required> ${otazka.odpoved_a}
+                                </label>
+                                <label style="display: block; margin-bottom: 10px; color: var(--text-normal); cursor: pointer; text-transform: none; font-weight: 400; font-size: 14px;">
+                                    <input type="radio" name="q_${otazka.id}" value="b" required> ${otazka.odpoved_b}
+                                </label>
+                                <label style="display: block; margin-bottom: 0; color: var(--text-normal); cursor: pointer; text-transform: none; font-weight: 400; font-size: 14px;">
+                                    <input type="radio" name="q_${otazka.id}" value="c" required> ${otazka.odpoved_c}
+                                </label>
+                            </div>
+                        `;
+                    });
+
+                    document.getElementById('btn-odeslat').style.display = 'block';
+                })
+                .catch(err => {
+                    console.error("Chyba načítání otázek:", err);
+                    document.getElementById('nadpis-testu').innerText = "Chyba při načítání otázek ze serveru.";
+                });
+        }
+
+        // Vylepšené odeslání s detailním výpisem do konzole
+        document.getElementById('testForm').addEventListener('submit', (e) => {
+            e.preventDefault(); 
+            console.log("1. Tlačítko stisknuto, začínám sbírat data...");
+            
+            const formData = new FormData(document.getElementById('testForm'));
+            const odpovedi = {};
+            
+            for (let [name, value] of formData.entries()) {
+                odpovedi[name.replace('q_', '')] = value;
+            }
+            
+            console.log("2. Odesílám payload na server:", { id_rekruta: idRekruta, id_testu: idTestu, odpovedi: odpovedi });
+
+            fetch('/api/vyhodnotit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_rekruta: idRekruta, id_testu: idTestu, odpovedi: odpovedi })
+            })
+            .then(res => {
+                console.log("3. Server odpověděl se statusem:", res.status);
+                if (!res.ok) throw new Error("Server odpověděl chybou! Zkontroluj terminál VS Code.");
+                return res.json();
+            })
+            .then(data => {
+                console.log("4. Odpověď ze serveru:", data);
+                if(data.prosel) {
+                    alert(`Výborně! Úspěšnost: ${data.procenta}%. Test byl zaznamenán jako splněný.`);
+                } else {
+                    alert(`Test nesplněn. Úspěšnost: ${data.procenta}%. (Vyžadováno 75%). Zkouška byla uzamčena.`);
+                }
+                window.location.href = "index.html"; 
+            })
+            .catch(err => {
+                console.error("5. KRITICKÁ CHYBA:", err);
+                alert("Něco se pokazilo! Zkontroluj černou konzoli (F12) a terminál ve VS Code.");
+            });
+        });
+    </script>
+</body>
+</html>

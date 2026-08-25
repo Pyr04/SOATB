@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>SOATB - HHC Velení</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
+
+    <script>
+        const prihlasenyAdmin = JSON.parse(sessionStorage.getItem('prihlasenyRekrut'));
+        if (!prihlasenyAdmin || (prihlasenyAdmin.je_admin !== 1 && prihlasenyAdmin.je_admin !== "1" && prihlasenyAdmin.je_admin !== true)) {
+            alert("🔒 PŘÍSTUP ZAMÍTNUT: Do této sekce mají přístup pouze velitelé a instruktoři.");
+            window.location.href = 'index.html';
+        }
+    </script>
+
+    <style>
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 2px 10px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .dropdown-btn:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-bright);
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background-color: #0b0b0d;
+            min-width: 180px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0px 10px 25px rgba(0,0,0,0.8);
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        .dropdown-content.show {
+            display: block;
+            animation: fadeIn 0.15s ease-out;
+        }
+
+        .dropdown-item {
+            color: var(--text-normal);
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            font-size: 13px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+
+        .dropdown-item:hover {
+            background-color: rgba(255, 255, 255, 0.04);
+            color: var(--text-bright);
+        }
+
+        .dropdown-item.danger {
+            color: var(--color-danger);
+        }
+
+        .dropdown-item.danger:hover {
+            background-color: rgba(220, 38, 38, 0.1);
+        }
+
+        .panel-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .lux-card {
+            background: linear-gradient(180deg, rgba(18,18,20,0.98), rgba(10,10,12,0.98));
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.55);
+            overflow: hidden;
+        }
+
+        .lux-card-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .lux-card-header h3 {
+            margin: 0;
+            font-size: 15px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #f5f5f5;
+        }
+
+        .lux-card-body {
+            padding: 22px;
+        }
+
+        .editor-shell {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+
+        .editor-topbar {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .editor-title {
+            font-size: 26px;
+            color: #fff;
+            margin: 0 0 6px 0;
+        }
+
+        .editor-subtitle {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .editor-meta {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .editor-chip {
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .lux-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px 14px;
+            background: #000;
+            border: 1px solid var(--border-color);
+            color: #fff;
+            border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .editor-wrap {
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .ck-editor__editable {
+            min-height: 380px;
+            background: #fff !important;
+            color: #111 !important;
+        }
+
+        .ck.ck-editor__main > .ck-editor__editable {
+            border-radius: 0 0 12px 12px;
+        }
+
+        .ck.ck-toolbar {
+            border-radius: 12px 12px 0 0;
+            background: #101114 !important;
+            border-color: rgba(255,255,255,0.08) !important;
+        }
+
+        .ck-toolbar .ck-button,
+        .ck-toolbar .ck-dropdown__button {
+            color: #e4e4e7 !important;
+        }
+
+        .ck-toolbar .ck-button:hover,
+        .ck-toolbar .ck-dropdown__button:hover {
+            background: rgba(255,255,255,0.06) !important;
+        }
+
+        .preview-panel {
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            background: #0c0c0f;
+            padding: 22px;
+            min-height: 560px;
+        }
+
+        .preview-panel .preview-inner {
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.02);
+            padding: 18px;
+            min-height: 490px;
+        }
+
+        .preview-panel .preview-kicker {
+            color: var(--text-muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .preview-panel .preview-title {
+            font-size: 28px;
+            color: #bfae95;
+            margin: 0 0 14px 0;
+            line-height: 1.2;
+        }
+
+        .preview-panel .preview-content {
+            color: var(--text-normal);
+            line-height: 1.7;
+        }
+
+        .preview-panel .preview-content img {
+            max-width: 100%;
+            border-radius: 10px;
+            margin: 14px 0;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        .preview-panel .preview-content h1,
+        .preview-panel .preview-content h2,
+        .preview-panel .preview-content h3 {
+            color: #fff;
+            margin-top: 18px;
+        }
+
+        .preview-panel .preview-content ul,
+        .preview-panel .preview-content ol {
+            color: var(--text-normal);
+            padding-left: 20px;
+        }
+
+        #preview-obrazky {
+            display: grid;
+            gap: 12px;
+            margin-top: 14px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+
+        #preview-obrazky img {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        .info-card {
+            background: linear-gradient(180deg, rgba(18,18,20,0.98), rgba(10,10,12,0.98));
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            padding: 20px 22px;
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .chapter-list-item {
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 18px;
+        }
+
+        .chapter-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .chapter-card {
+            background: linear-gradient(180deg, rgba(18,18,20,0.98), rgba(10,10,12,0.98));
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.55);
+            overflow: hidden;
+        }
+
+        .chapter-card-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chapter-card-header h3 {
+            margin: 0;
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #f5f5f5;
+        }
+
+        .chapter-card-body {
+            padding: 22px;
+        }
+
+        @media (max-width: 1100px) {
+            .panel-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="veleni-layout">
+        <nav class="sidebar">
+            <div class="sidebar-hlavicka">
+                <h2 style="margin: 0;">SOATB <span style="color: #666; font-size: 14px;">by 160th</span></h2>
+            </div>
+
+            <div class="sidebar-kategorie">Členové</div>
+            <button class="tab-btn" onclick="otevriSekci('novy', this)"><i class="fa-solid fa-user-plus"></i> Nový profil</button>
+            <button id="btn-prehled" class="tab-btn aktivni" onclick="otevriSekci('prehled', this)"><i class="fa-solid fa-users"></i> Tabulka rekrutů</button>
+
+            <div class="sidebar-kategorie">Certifikace & Testy</div>
+            <button class="tab-btn" id="btn-sprava-testu" onclick="otevriSekci('sprava-testu', this)"><i class="fa-solid fa-file-signature"></i> Správa modulů</button>
+
+            <div class="sidebar-kategorie">Studijní materiály</div>
+            <button class="tab-btn" id="btn-sprava-mat" onclick="otevriSekci('sprava-materialu', this)"><i class="fa-solid fa-book-bookmark"></i> Učební materiály</button>
+
+            <div style="margin-top: auto; padding-bottom: 20px;">
+                <a href="index.html" class="tab-btn" style="display: block; text-decoration: none;"><i class="fa-solid fa-arrow-right-from-bracket fa-flip-horizontal"></i> Výcvikové centrum</a>
+            </div>
+        </nav>
+
+        <main class="obsah-panelu">
+            <section id="prehled" class="sekce-obsah aktivni">
+                <h2>Tabulka členů a rekrutů</h2>
+                <div class="karta" style="overflow: visible;">
+                    <table>
+                        <tr><th>Jméno</th><th>Hodnost</th><th>Login</th><th>Heslo</th><th style="width: 80px; text-align: center;">Akce</th></tr>
+                        <tbody id="tabulka-rekrutu"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="novy" class="sekce-obsah">
+                <h2>Založení profilu nového člena</h2>
+                <div class="karta" style="max-width: 500px;">
+                    <form id="formNovyRekrut">
+                        <div class="form-group"><label>Herní přezdívka / Jméno</label><input type="text" id="jmenoRekruta" required></div>
+                        <div class="form-group"><label>Počáteční hodnost</label>
+                            <select id="hodnostRekruta">
+                                <optgroup label="Trainees"><option value="WOC" selected>WOC</option></optgroup>
+                                <optgroup label="Warrant Officers"><option value="WO1">WO1</option><option value="CW2">CW2</option><option value="CW3">CW3</option><option value="CW4">CW4</option><option value="CW5">CW5</option></optgroup>
+                                <optgroup label="Officers"><option value="2LT">2LT</option><option value="1LT">1LT</option><option value="CPT">CPT</option></optgroup>
+                            </select>
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: center; margin-top: 25px; margin-bottom: 25px; padding: 15px; background: rgba(202, 138, 4, 0.05); border: 1px solid rgba(202, 138, 4, 0.2); border-radius: 6px;">
+                            <input type="checkbox" id="jeAdmin" style="width: auto; margin-right: 15px; transform: scale(1.3);">
+                            <label for="jeAdmin" style="margin: 0; color: var(--color-warning); font-weight: 600;">Udělit velitelská práva</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Založit profil</button>
+                    </form>
+                </div>
+            </section>
+
+            <section id="sprava-testu" class="sekce-obsah">
+                <h2>Výcvikové moduly</h2>
+                <div class="karta" style="margin-bottom: 30px;">
+                    <h3 style="margin-top: 0;">Vytvořit nový modul</h3>
+                    <form id="formNovyTest" style="display: flex; gap: 15px; align-items: flex-end;">
+                        <div style="flex: 1;"><label>Název testu</label><input type="text" id="nazevTestu" required></div>
+                        <div style="flex: 2;"><label>Stručný popis</label><input type="text" id="popisTestu" required></div>
+                        <button type="submit" class="btn btn-primary">Vytvořit modul</button>
+                    </form>
+                </div>
+                <div class="karta" style="overflow: visible;">
+                    <h3 style="margin-top: 0;">Seznam existujících modulů</h3>
+                    <table>
+                        <tr><th>Název modulu</th><th style="width: 80px; text-align: center;">Akce</th></tr>
+                        <tbody id="tabulka-testu"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="editace-testu" class="sekce-obsah">
+                <button class="btn" style="background: transparent; color: #a1a1aa; border: 1px solid #27272a; margin-bottom: 20px;" onclick="otevriSekci('sprava-testu', document.getElementById('btn-sprava-testu'))">← Zpět na seznam modulů</button>
+                <h2 id="editace-nadpis">Úprava testu</h2>
+                <div class="karta" style="margin-bottom: 30px;">
+                    <h3 style="margin-top: 0;">Přidat otázku</h3>
+                    <form id="formNovaOtazka">
+                        <div class="form-group"><label>Znění otázky</label><input type="text" id="zneniOtazky" required></div>
+                        <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                            <div style="flex: 1;"><label>Možnost A</label><input type="text" id="odpovedA" required><label style="display: inline-block; margin-top: 8px; text-transform: none;"><input type="radio" name="spravnaOdpoved" value="a" required> Správná</label></div>
+                            <div style="flex: 1;"><label>Možnost B</label><input type="text" id="odpovedB" required><label style="display: inline-block; margin-top: 8px; text-transform: none;"><input type="radio" name="spravnaOdpoved" value="b" required> Správná</label></div>
+                            <div style="flex: 1;"><label>Možnost C</label><input type="text" id="odpovedC" required><label style="display: inline-block; margin-top: 8px; text-transform: none;"><input type="radio" name="spravnaOdpoved" value="c" required> Správná</label></div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Uložit otázku</button>
+                    </form>
+                </div>
+                <div class="karta">
+                    <h3 style="margin-top: 0;">Vložené otázky</h3>
+                    <ul id="seznam-otazek" style="padding-left: 0; list-style-type: none; margin: 0;"></ul>
+                </div>
+            </section>
+
+            <section id="sprava-materialu" class="sekce-obsah">
+                <h2>Studijní materiály</h2>
+                <div class="karta" style="margin-bottom: 30px;">
+                    <h3 style="margin-top: 0;">Vytvořit nový manuál</h3>
+                    <form id="formNovyMaterial" style="display: flex; gap: 15px; align-items: flex-end;">
+                        <div style="flex: 1;"><label>Název manuálu</label><input type="text" id="nazevMaterialu" required></div>
+                        <div style="flex: 2;"><label>Stručný popis manuálu</label><input type="text" id="popisMaterialu" required></div>
+                        <button type="submit" class="btn btn-primary">Vytvořit manuál</button>
+                    </form>
+                </div>
+                <div class="karta" style="overflow: visible;">
+                    <h3 style="margin-top: 0;">Seznam existujících manuálů</h3>
+                    <table>
+                        <tr><th>Název materiálu</th><th>Popis</th><th style="width: 80px; text-align: center;">Akce</th></tr>
+                        <tbody id="tabulka-materialu"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="editace-materialu" class="sekce-obsah">
+                <button class="btn" style="background: transparent; color: #a1a1aa; border: 1px solid #27272a; margin-bottom: 20px;" onclick="otevriSekci('sprava-materialu', document.getElementById('btn-sprava-mat'))">← Zpět na seznam manuálů</button>
+                <h2 id="editace-mat-nadpis">Obsah manuálu</h2>
+
+                <div class="editor-shell">
+                    <div class="lux-card">
+                        <div class="lux-card-header">
+                            <h3>Editor kapitoly</h3>
+                            <span class="mini-muted">HTML + více obrázků</span>
+                        </div>
+                        <div class="lux-card-body">
+                            <div class="editor-topbar" style="margin-bottom: 18px;">
+                                <div>
+                                    <div class="editor-title">Luxusní editor</div>
+                                    <p class="editor-subtitle">Po kliknutí na „Upravit kapitoly“ se sem načte detail manuálu.</p>
+                                </div>
+                                <div class="editor-meta">
+                                    <div class="editor-chip">Preview vpravo</div>
+                                    <div class="editor-chip">CKEditor 5</div>
+                                </div>
+                            </div>
+
+                            <div class="form-row" style="margin-bottom: 18px;">
+                                <div>
+                                    <label class="form-label">Název manuálu</label>
+                                    <input type="text" id="material-detail-nazev" class="lux-input" readonly>
+                                </div>
+                                <div>
+                                    <label class="form-label">Název kapitoly</label>
+                                    <input type="text" id="nazevKapitoly" class="lux-input" required>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom: 18px;">
+                                <label class="form-label">Obsah kapitoly</label>
+                                <div id="editor" class="editor-wrap"></div>
+                            </div>
+
+                            <div class="form-row" style="margin-bottom: 18px;">
+                                <div>
+                                    <label class="form-label">Obrázky ke kapitole</label>
+                                    <input type="file" id="obrazkyKapitoly" accept="image/*" multiple style="background-color: var(--bg-input); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); color: var(--text-normal); width: 100%; box-sizing: border-box;">
+                                </div>
+                                <div>
+                                    <label class="form-label">Akce</label>
+                                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                        <button type="button" class="btn btn-primary" id="btn-submit-kapitola" onclick="ulozKapitolu()">Přidat kapitolu</button>
+                                        <button type="button" id="btn-cancel-kapitola" class="btn btn-nav" style="display: none; margin: 0;" onclick="zrusitEditaciKapitoly()">Zrušit úpravy</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="info-card">
+                                Tento editor ukládá obsah jako HTML, takže v čtečce bude zachován formát textu. Obrázky se ukládají samostatně a zobrazují přímo v kapitole.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel-grid">
+                        <div class="lux-card">
+                            <div class="lux-card-header">
+                                <h3>Náhled kapitoly</h3>
+                                <span class="mini-muted">live preview</span>
+                            </div>
+                            <div class="lux-card-body">
+                                <div class="preview-panel">
+                                    <div class="preview-kicker">Oficiální manuál 160th SOAR</div>
+                                    <div class="preview-inner">
+                                        <div class="preview-title" id="preview-nadpis">Název kapitoly</div>
+                                        <div class="preview-content" id="preview-obsah"></div>
+                                        <div id="preview-obrazky"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="chapter-card">
+                            <div class="chapter-card-header">
+                                <h3>Vložené kapitoly</h3>
+                                <span class="mini-muted" id="pocet-kapitol">0 kapitol</span>
+                            </div>
+                            <div class="chapter-card-body">
+                                <ul id="seznam-kapitol" style="padding-left: 0; list-style-type: none; margin: 0;"></ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="detail" class="sekce-obsah">
+                <button class="btn" style="background: transparent; color: #a1a1aa; border: 1px solid #27272a; margin-bottom: 20px;" onclick="otevriSekci('prehled', document.getElementById('btn-prehled'))">← Zpět na přehled</button>
+                <h2 id="detail-jmeno">Detail rekruta</h2>
+                <div class="karta" style="margin-bottom: 24px;">
+                    <h3 style="margin-top: 0;">Povýšení / Změna hodnosti</h3>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <select id="detail-zmena-hodnosti" style="max-width: 200px;">
+                            <optgroup label="Trainees"><option value="WOC">WOC</option></optgroup>
+                            <optgroup label="Warrant Officers"><option value="WO1">WO1</option><option value="CW2">CW2</option><option value="CW3">CW3</option><option value="CW4">CW4</option><option value="CW5">CW5</option></optgroup>
+                            <optgroup label="Officers"><option value="2LT">2LT</option><option value="1LT">1LT</option><option value="CPT">CPT</option></optgroup>
+                        </select>
+                        <button class="btn btn-primary" onclick="zmenHodnost()">Aplikovat změnu</button>
+                    </div>
+                </div>
+                <div class="karta" style="margin-bottom: 24px;">
+                    <h3 style="margin-top: 0;">Výcvikové moduly (Přiřazení)</h3>
+                    <div id="seznam-testu-rekruta">Načítám testy...</div>
+                </div>
+                <div class="karta">
+                    <h3 style="margin-top: 0; color: #bfae95;">Záznamy a historie zkoušek</h3>
+                    <table>
+                        <tr><th>Datum a čas</th><th>Modul</th><th>Výsledek</th><th style="width: 80px; text-align: center;">Akce</th></tr>
+                        <tbody id="tabulka-historie"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="zaznam-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close" onclick="zavriModal()"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="modal-nadpis" style="margin-bottom: 5px;">Detail záznamu</h2>
+            <p id="modal-podnadpis" style="color: var(--text-muted); font-size: 13px; margin-top: 0; margin-bottom: 20px;"></p>
+            <div id="modal-otazky"></div>
+        </div>
+    </div>
+
+    <script>
+        let aktualniIdRekruta = null;
+        let aktualniIdTestuEditor = null;
+        let aktualniIdMaterialuEditor = null;
+        let editovanaKapitolaId = null;
+        let pametKapitol = [];
+        let pametHistorie = [];
+        let ckEditorInstance = null;
+        let previewExistujiciObrazky = [];
+
+        const poradiHodnosti = { "CPT": 9, "1LT": 8, "2LT": 7, "CW5": 6, "CW4": 5, "CW3": 4, "CW2": 3, "WO1": 2, "WOC": 1 };
+
+        function toggleDropdown(id) {
+            document.querySelectorAll('.dropdown-content').forEach(menu => { if(menu.id !== id) menu.classList.remove('show'); });
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('show');
+        }
+
+        function otevriSekci(idSekce, tlacitko) {
+            document.querySelectorAll('.sekce-obsah').forEach(s => s.classList.remove('aktivni'));
+            if (tlacitko) {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('aktivni'));
+                tlacitko.classList.add('aktivni');
+            }
+            const sec = document.getElementById(idSekce);
+            if (sec) sec.classList.add('aktivni');
+            if (idSekce === 'sprava-testu') nactiTabulkuTestu();
+            if (idSekce === 'sprava-materialu') nactiTabulkuMaterialu();
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.matches('.dropdown-btn')) document.querySelectorAll('.dropdown-content').forEach(m => m.classList.remove('show'));
+        }
+
+        function initCKEditor() {
+            const el = document.querySelector('#editor');
+            if (!el || ckEditorInstance) return;
+
+            ClassicEditor.create(el, {
+                toolbar: [
+                    'heading', '|',
+                    'bold', 'italic', 'underline', 'strikethrough', '|',
+                    'fontSize', 'fontColor', 'fontBackgroundColor', '|',
+                    'alignment', '|',
+                    'bulletedList', 'numberedList', 'outdent', 'indent', '|',
+                    'link', 'blockQuote', 'insertTable', 'imageUpload', '|',
+                    'undo', 'redo'
+                ],
+                fontSize: { options: [ 'tiny', 'small', 'default', 'big', 'huge' ] },
+                alignment: { options: [ 'left', 'center', 'right', 'justify' ] },
+                image: {
+                    toolbar: [
+                        'imageStyle:inline',
+                        'imageStyle:block',
+                        'imageStyle:side',
+                        '|',
+                        'toggleImageCaption',
+                        'imageTextAlternative'
+                    ]
+                }
+            }).then(editor => {
+                ckEditorInstance = editor;
+                editor.model.document.on('change:data', renderPreview);
+                renderPreview();
+            }).catch(error => console.error(error));
+        }
+
+        function nactiTabulkuRekrutu() {
+            fetch('/api/rekruti').then(res => res.json()).then(rekruti => {
+                rekruti.sort((a, b) => (poradiHodnosti[b.hodnost] || 0) - (poradiHodnosti[a.hodnost] || 0));
+                const tab = document.getElementById('tabulka-rekrutu');
+                if (!tab) return;
+                tab.innerHTML = '';
+                rekruti.forEach(r => {
+                    const adminStitek = r.je_admin ? '<span class="badge badge-warning" style="margin-left: 8px; font-size: 10px;">ADMIN</span>' : '';
+                    tab.innerHTML += `<tr>
+                        <td><strong style="color: #fff;">${r.jmeno}</strong> ${adminStitek}</td>
+                        <td><span class="badge badge-default">${r.hodnost}</span></td>
+                        <td><span style="color: var(--text-muted); font-size: 12px;">${r.login || 'N/A'}</span></td>
+                        <td><span style="color: var(--color-warning); font-family: monospace; font-size: 13px;">${r.heslo || 'N/A'}</span></td>
+                        <td style="text-align: center;">
+                            <div class="dropdown">
+                                <button class="dropdown-btn" onclick="toggleDropdown('drop-rekrut-${r.id}')">⋮</button>
+                                <div id="drop-rekrut-${r.id}" class="dropdown-content" style="right: 30px;">
+                                    <button class="dropdown-item" onclick="otevriDetailRekruta(${r.id}, '${r.jmeno}', '${r.hodnost}')"><i class="fa-solid fa-folder-open"></i> Spravovat profil</button>
+                                    <button class="dropdown-item danger" onclick="smazatRekrutaZeSeznamu(${r.id})"><i class="fa-solid fa-trash"></i> Smazat profil</button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>`;
+                });
+            });
+        }
+
+        function otevriDetailRekruta(id, jmeno, aktualniHodnost) {
+            aktualniIdRekruta = id;
+            otevriSekci('detail', null);
+            document.getElementById('detail-jmeno').innerText = 'Složka: ' + jmeno;
+            const hodSelect = document.getElementById('detail-zmena-hodnosti');
+            if (hodSelect && aktualniHodnost) hodSelect.value = aktualniHodnost;
+
+            fetch('/api/testy').then(res => res.json()).then(testy => {
+                const kontejner = document.getElementById('seznam-testu-rekruta');
+                if (!kontejner) return;
+                kontejner.innerHTML = '';
+                testy.forEach(test => {
+                    kontejner.innerHTML += `<div style="border-bottom: 1px solid var(--border-color); padding: 16px 0; display: flex; justify-content: space-between; align-items: center;"><strong style="color: #e4e4e7;">${test.nazev}</strong><span id="stav-testu-${test.id}">...</span></div>`;
+                    nactiStavTestu(id, test.id);
+                });
+            });
+
+            fetch(`/api/rekruti/${id}/zaznamy`).then(res => res.json()).then(zaznamy => {
+                pametHistorie = zaznamy;
+                const tabHist = document.getElementById('tabulka-historie');
+                if (!tabHist) return;
+                tabHist.innerHTML = '';
+                if (zaznamy.length === 0) {
+                    tabHist.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Žádné záznamy.</td></tr>';
+                    return;
+                }
+                zaznamy.forEach(z => {
+                    const d = new Date(z.datum);
+                    const datumText = d.toLocaleDateString('cs-CZ') + ' ' + d.toLocaleTimeString('cs-CZ', {hour: '2-digit', minute:'2-digit'});
+                    const stitek = z.prosel ? '<span class="badge badge-success">Splněno</span>' : '<span class="badge badge-default" style="color: var(--color-danger); border-color: rgba(220, 38, 38, 0.3);">Nesplněno</span>';
+                    tabHist.innerHTML += `<tr><td style="color: var(--text-muted); font-size: 13px;">${datumText}</td><td><strong style="color: #fff;">${z.nazev}</strong></td><td>${stitek} <strong style="color: ${z.prosel ? '#4ade80' : '#f87171'}; margin-left: 10px;">${z.procenta}%</strong></td><td style="text-align: center;"><button class="btn btn-nav" style="margin: 0; padding: 6px 12px; font-size: 12px;" onclick="ukazDetailZaznamu(${z.id})"><i class="fa-solid fa-magnifying-glass"></i></button></td></tr>`;
+                });
+            });
+        }
+
+        function ukazDetailZaznamu(idZaznamu) {
+            const zaznam = pametHistorie.find(z => z.id === idZaznamu);
+            if (!zaznam) return;
+            const odpovediRekruta = typeof zaznam.odpovedi === 'string' ? JSON.parse(zaznam.odpovedi) : zaznam.odpovedi;
+            const d = new Date(zaznam.datum);
+            document.getElementById('zaznam-modal').style.display = 'flex';
+            document.getElementById('modal-nadpis').innerText = zaznam.nazev;
+            document.getElementById('modal-podnadpis').innerText = `Odevzdáno: ${d.toLocaleDateString('cs-CZ')} ${d.toLocaleTimeString('cs-CZ', {hour: '2-digit', minute:'2-digit'})} | Dosaženo: ${zaznam.procenta}%`;
+
+            const kontejner = document.getElementById('modal-otazky');
+            if (!kontejner) return;
+            kontejner.innerHTML = 'Načítám...';
+            fetch(`/api/admin/testy/${zaznam.id_testu}/otazky`).then(res => res.json()).then(otazkyDb => {
+                kontejner.innerHTML = '';
+                otazkyDb.forEach((o, index) => {
+                    const jeSpravne = odpovediRekruta[o.id] === o.spravna_odpoved;
+                    kontejner.innerHTML += `
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid ${jeSpravne ? 'rgba(22, 163, 74, 0.3)' : 'rgba(220, 38, 38, 0.3)'}; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                            <p style="margin: 0 0 10px 0; color: #fff; font-weight: 500;">${index + 1}. ${o.zneni}</p>
+                            <div style="display: flex; gap: 10px; align-items: flex-start; color: var(--text-muted); font-size: 13px;">
+                                <span>${jeSpravne ? '<i class="fa-solid fa-check" style="color: #4ade80;"></i>' : '<i class="fa-solid fa-xmark" style="color: #f87171;"></i>'}</span>
+                                <div>
+                                    <span><strong>Zvolil:</strong> <span style="color: ${jeSpravne ? '#4ade80' : '#f87171'}">${o['odpoved_' + odpovediRekruta[o.id]] || 'Nevyplněno'}</span></span><br>
+                                    ${!jeSpravne ? `<span><strong>Správně:</strong> ${o['odpoved_' + o.spravna_odpoved]}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>`;
+                });
+            });
+        }
+
+        function zavriModal() {
+            document.getElementById('zaznam-modal').style.display = 'none';
+        }
+
+        function zmenHodnost() {
+            fetch(`/api/rekruti/${aktualniIdRekruta}/hodnost`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ hodnost: document.getElementById('detail-zmena-hodnosti').value })
+            }).then(() => nactiTabulkuRekrutu());
+        }
+
+        function nactiStavTestu(idRekruta, idTestu) {
+            fetch(`/api/stav/${idRekruta}/${idTestu}`).then(res => res.json()).then(data => {
+                const box = document.getElementById(`stav-testu-${idTestu}`);
+                if (!box) return;
+                if (data.stav === 0) box.innerHTML = `<button class="btn btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="odemkniTest(${idRekruta}, ${idTestu})">Odemknout</button>`;
+                else if (data.stav === 1) box.innerHTML = '<span class="badge badge-warning">Čeká na splnění</span>';
+                else box.innerHTML = '<span class="badge badge-success">Schváleno</span>';
+            });
+        }
+
+        function odemkniTest(idR, idT) {
+            fetch('/api/odemknout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_rekruta: idR, id_testu: idT })
+            }).then(() => nactiStavTestu(idR, idT));
+        }
+
+        function smazatRekrutaZeSeznamu(id) {
+            if (confirm('Smazat?')) fetch(`/api/rekruti/${id}`, { method: 'DELETE' }).then(() => nactiTabulkuRekrutu());
+        }
+
+        document.getElementById('formNovyTest').addEventListener('submit', (e) => {
+            e.preventDefault();
+            fetch('/api/testy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nazev: document.getElementById('nazevTestu').value, popis: document.getElementById('popisTestu').value })
+            }).then(() => { document.getElementById('formNovyTest').reset(); nactiTabulkuTestu(); });
+        });
+
+        function nactiTabulkuTestu() {
+            fetch('/api/testy').then(res => res.json()).then(testy => {
+                const tab = document.getElementById('tabulka-testu');
+                if (!tab) return;
+                tab.innerHTML = '';
+                testy.forEach(t => {
+                    tab.innerHTML += `<tr><td><strong style="color: #fff;">${t.nazev}</strong><br><small style="color: #a1a1aa;">${t.popis}</small></td><td style="text-align: center;"><div class="dropdown"><button class="dropdown-btn" onclick="toggleDropdown('drop-test-${t.id}')">⋮</button><div id="drop-test-${t.id}" class="dropdown-content"><button class="dropdown-item" onclick="otevriEditaciTestu(${t.id}, '${t.nazev}')">Upravit test</button><button class="dropdown-item danger" onclick="smazatTest(${t.id})">Smazat test</button></div></div></td></tr>`;
+                });
+            });
+        }
+
+        function smazatTest(id) {
+            if (confirm('Smazat modul?')) fetch(`/api/testy/${id}`, { method: 'DELETE' }).then(() => nactiTabulkuTestu());
+        }
+
+        function otevriEditaciTestu(id, nazev) {
+            aktualniIdTestuEditor = id;
+            otevriSekci('editace-testu', null);
+            document.getElementById('editace-nadpis').innerText = 'Zadání: ' + nazev;
+            nactiOtazkyKTestu(id);
+        }
+
+        function nactiOtazkyKTestu(id) {
+            fetch(`/api/admin/testy/${id}/otazky`).then(res => res.json()).then(otazky => {
+                const list = document.getElementById('seznam-otazek');
+                if (!list) return;
+                list.innerHTML = '';
+                otazky.forEach(o => {
+                    list.innerHTML += `<li style="border-bottom: 1px solid var(--border-color); padding: 16px 0; display: flex; justify-content: space-between; align-items: center;"><div><strong style="color: #fff; display: block; margin-bottom: 4px;">${o.zneni}</strong><span style="color: #a1a1aa; font-size: 13px;">A) ${o.odpoved_a} | B) ${o.odpoved_b} | C) ${o.odpoved_c} (Správně: ${o.spravna_odpoved.toUpperCase()})</span></div><button class="btn btn-danger" onclick="smazatOtazku(${o.id})"><i class="fa-solid fa-trash"></i></button></li>`;
+                });
+            });
+        }
+
+        function smazatOtazku(id) {
+            if (confirm('Odstranit?')) fetch(`/api/otazky/${id}`, { method: 'DELETE' }).then(() => nactiOtazkyKTestu(aktualniIdTestuEditor));
+        }
+
+        document.getElementById('formNovaOtazka').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const p = {
+                id_testu: aktualniIdTestuEditor,
+                zneni: document.getElementById('zneniOtazky').value,
+                a: document.getElementById('odpovedA').value,
+                b: document.getElementById('odpovedB').value,
+                c: document.getElementById('odpovedC').value,
+                spravna: document.querySelector('input[name="spravnaOdpoved"]:checked').value
+            };
+            fetch('/api/otazky', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(p)
+            }).then(() => {
+                document.getElementById('formNovaOtazka').reset();
+                nactiOtazkyKTestu(aktualniIdTestuEditor);
+            });
+        });
+
+        document.getElementById('formNovyMaterial').addEventListener('submit', (e) => {
+            e.preventDefault();
+            fetch('/api/materialy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nazev: document.getElementById('nazevMaterialu').value,
+                    popis: document.getElementById('popisMaterialu').value
+                })
+            }).then(() => {
+                document.getElementById('formNovyMaterial').reset();
+                nactiTabulkuMaterialu();
+            });
+        });
+
+        function nactiTabulkuMaterialu() {
+            fetch('/api/materialy').then(res => res.json()).then(mat => {
+                const tab = document.getElementById('tabulka-materialu');
+                if (!tab) return;
+                tab.innerHTML = '';
+                if (mat.length === 0) {
+                    tab.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Zatím nejsou vytvořeny žádné manuály.</td></tr>';
+                    return;
+                }
+                mat.forEach(m => {
+                    tab.innerHTML += `<tr>
+                        <td><strong style="color: #fff;">${m.nazev}</strong></td>
+                        <td><span style="color: var(--text-muted); font-size: 13px;">${m.popis}</span></td>
+                        <td style="text-align: center;">
+                            <div class="dropdown">
+                                <button class="dropdown-btn" onclick="toggleDropdown('drop-mat-${m.id}')">⋮</button>
+                                <div id="drop-mat-${m.id}" class="dropdown-content" style="right: 30px;">
+                                    <button class="dropdown-item" onclick="otevriEditaciMaterialu(${m.id}, '${m.nazev}')"><i class="fa-solid fa-pen-to-square"></i> Upravit kapitoly</button>
+                                    <button class="dropdown-item danger" onclick="smazatMaterial(${m.id})"><i class="fa-solid fa-trash"></i> Smazat manuál</button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>`;
+                });
+            });
+        }
+
+        function smazatMaterial(id) {
+            if (confirm('Opravdu smazat celý manuál včetně všech kapitol a obrázků?')) {
+                fetch(`/api/materialy/${id}`, { method: 'DELETE' }).then(() => nactiTabulkuMaterialu());
+            }
+        }
+
+        function otevriEditaciMaterialu(id, nazev) {
+            aktualniIdMaterialuEditor = id;
+            editovanaKapitolaId = null;
+            previewExistujiciObrazky = [];
+            otevriSekci('editace-materialu', null);
+
+            const matInput = document.getElementById('material-detail-nazev');
+            if (matInput) matInput.value = nazev;
+
+            document.getElementById('editace-mat-nadpis').innerText = 'Správa kapitol: ' + nazev;
+
+            const n = document.getElementById('nazevKapitoly');
+            if (n) n.value = '';
+            const f = document.getElementById('obrazkyKapitoly');
+            if (f) f.value = '';
+
+            const btn = document.getElementById('btn-submit-kapitola');
+            if (btn) btn.innerText = 'Přidat kapitolu';
+
+            const cancel = document.getElementById('btn-cancel-kapitola');
+            if (cancel) cancel.style.display = 'none';
+
+            if (!ckEditorInstance) initCKEditor();
+
+            setTimeout(() => {
+                nactiKapitoly(id);
+                renderPreview();
+            }, 150);
+        }
+
+        function nactiKapitoly(idMat) {
+            if (!idMat) return;
+            fetch(`/api/materialy/${idMat}/kapitoly`)
+                .then(res => res.json())
+                .then(kapitoly => {
+                    pametKapitol = Array.isArray(kapitoly) ? kapitoly : [];
+                    const list = document.getElementById('seznam-kapitol');
+                    const pocet = document.getElementById('pocet-kapitol');
+                    if (!list || !pocet) return;
+
+                    list.innerHTML = '';
+                    pocet.innerText = `${pametKapitol.length} kapitol`;
+
+                    if (pametKapitol.length === 0) {
+                        list.innerHTML = '<li style="color: var(--text-muted); font-style: italic;">Manuál zatím nemá žádné kapitoly.</li>';
+                        return;
+                    }
+
+                    pametKapitol.forEach(k => {
+                        const imgs = Array.isArray(k.obrazky) ? k.obrazky : [];
+                        list.innerHTML += `
+                            <li class="chapter-list-item">
+                                <div style="flex: 1;">
+                                    <strong style="color: #bfae95; display: block; margin-bottom: 6px; font-size: 15px;">${k.nazev_kapitoly}</strong>
+                                    <p style="color: var(--text-normal); font-size: 13px; margin: 0; white-space: pre-line;">${(k.obsah || '').replace(/<[^>]+>/g, '').substring(0, 150)}...</p>
+                                    <div class="mini-muted" style="margin-top: 8px;">${imgs.length} obrázků</div>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button class="btn btn-nav" style="margin: 0; padding: 6px 12px;" onclick="editovatKapitolu(${k.id})"><i class="fa-solid fa-pen"></i></button>
+                                    <button class="btn btn-danger" style="padding: 6px 12px;" onclick="smazatKapitolu(${k.id})"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </li>`;
+                    });
+                })
+                .catch(err => console.error('Chyba při načítání kapitol:', err));
+        }
+
+        function renderPreview() {
+            const titleInput = document.getElementById('nazevKapitoly');
+            const titleBox = document.getElementById('preview-nadpis');
+            const contentBox = document.getElementById('preview-obsah');
+            const box = document.getElementById('preview-obrazky');
+
+            if (titleBox) titleBox.innerText = (titleInput && titleInput.value) ? titleInput.value : 'Název kapitoly';
+            if (contentBox) {
+                contentBox.innerHTML = ckEditorInstance ? (ckEditorInstance.getData() || '<span style="color: var(--text-muted);">Náhled obsahu kapitoly...</span>') : '<span style="color: var(--text-muted);">Náhled obsahu kapitoly...</span>';
+            }
+            if (!box) return;
+
+            box.innerHTML = '';
+
+            if (previewExistujiciObrazky && previewExistujiciObrazky.length > 0) {
+                previewExistujiciObrazky.forEach(url => {
+                    box.innerHTML += `<img src="${url}" alt="existující obrázek">`;
+                });
+            }
+
+            const fileInput = document.getElementById('obrazkyKapitoly');
+            if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                Array.from(fileInput.files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = e => {
+                        box.innerHTML += `<img src="${e.target.result}" alt="preview">`;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            } else if ((!previewExistujiciObrazky || previewExistujiciObrazky.length === 0)) {
+                box.innerHTML = '<span style="color: var(--text-muted); font-size: 13px;">Vybrané obrázky se zobrazí tady.</span>';
+            }
+        }
+
+        document.getElementById('nazevKapitoly').addEventListener('input', renderPreview);
+        document.getElementById('obrazkyKapitoly').addEventListener('change', renderPreview);
+
+        function editovatKapitolu(id) {
+            const kap = pametKapitol.find(k => k.id === id);
+            if (!kap) return;
+
+            editovanaKapitolaId = id;
+            document.getElementById('nazevKapitoly').value = kap.nazev_kapitoly;
+            if (ckEditorInstance) ckEditorInstance.setData(kap.obsah || '');
+            document.getElementById('obrazkyKapitoly').value = '';
+            document.getElementById('btn-submit-kapitola').innerText = 'Uložit změny';
+            document.getElementById('btn-cancel-kapitola').style.display = 'inline-block';
+
+            previewExistujiciObrazky = Array.isArray(kap.obrazky) ? kap.obrazky : [];
+            renderPreview();
+        }
+
+        function zrusitEditaciKapitoly() {
+            editovanaKapitolaId = null;
+            previewExistujiciObrazky = [];
+
+            const title = document.getElementById('nazevKapitoly');
+            if (title) title.value = '';
+
+            const file = document.getElementById('obrazkyKapitoly');
+            if (file) file.value = '';
+
+            if (ckEditorInstance) ckEditorInstance.setData('');
+
+            document.getElementById('btn-submit-kapitola').innerText = 'Přidat kapitolu';
+            document.getElementById('btn-cancel-kapitola').style.display = 'none';
+            renderPreview();
+        }
+
+        function ulozKapitolu() {
+            if (!aktualniIdMaterialuEditor) {
+                alert('Nejdřív vyber manuál.');
+                return;
+            }
+
+            const obs = ckEditorInstance ? ckEditorInstance.getData() : '';
+            const formData = new FormData();
+            formData.append('id_materialu', aktualniIdMaterialuEditor);
+            formData.append('nazev_kapitoly', document.getElementById('nazevKapitoly').value);
+            formData.append('obsah', obs);
+
+            const fileInput = document.getElementById('obrazkyKapitoly');
+            if (fileInput && fileInput.files) {
+                for (const file of fileInput.files) formData.append('obrazky', file);
+            }
+
+            const url = editovanaKapitolaId ? `/api/kapitoly/${editovanaKapitolaId}` : '/api/kapitoly';
+            const method = editovanaKapitolaId ? 'PUT' : 'POST';
+
+            fetch(url, { method, body: formData })
+                .then(async res => {
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok || data.uspech === false) throw new Error(data.chyba || 'Uložení se nezdařilo.');
+                    zrusitEditaciKapitoly();
+                    nactiKapitoly(aktualniIdMaterialuEditor);
+                })
+                .catch(err => {
+                    console.error('Chyba při ukládání kapitoly:', err);
+                    alert('Kapitolu se nepodařilo uložit.');
+                });
+        }
+
+        function smazatKapitolu(id) {
+            if (confirm('Odstranit tuto kapitolu?')) {
+                fetch(`/api/kapitoly/${id}`, { method: 'DELETE' }).then(() => nactiKapitoly(aktualniIdMaterialuEditor));
+            }
+        }
+
+        nactiTabulkuRekrutu();
+        initCKEditor();
+        renderPreview();
+    </script>
+</body>
+</html>
