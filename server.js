@@ -9,6 +9,9 @@ require('dotenv').config();
 const app = express();
 const port = 3000;
 
+// --- GLOBÁLNÍ ZÁMEK MATERIÁLŮ ---
+let materialyUzamceny = false;
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -32,8 +35,6 @@ const db = mysql.createConnection({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME
 });
-
-
 
 db.connect((err) => {
     if (err) throw err;
@@ -83,6 +84,20 @@ function removeFiles(urls) {
         }
     });
 }
+
+// --- ZÁMEK MATERIÁLŮ (API) ---
+app.get('/api/admin/stav-materialu', (req, res) => {
+    res.json({ uzamceno: materialyUzamceny });
+});
+
+app.post('/api/admin/toggle-materialy', (req, res) => {
+    if (req.body.je_admin) {
+        materialyUzamceny = req.body.uzamceno;
+        res.json({ uspech: true, uzamceno: materialyUzamceny });
+    } else {
+        res.status(403).json({ chyba: 'Přístup odepřen.' });
+    }
+});
 
 // --- REKRUTI ---
 app.get('/api/rekruti', (req, res) => {
@@ -182,6 +197,9 @@ app.delete('/api/otazky/:id', (req, res) => {
 
 // --- MATERIÁLY ---
 app.get('/api/materialy', (req, res) => {
+    if (materialyUzamceny && req.query.admin !== '1' && req.query.admin !== 'true') {
+        return res.status(403).json({ chyba: 'Materiály jsou uzamčeny.' });
+    }
     db.query("SELECT * FROM materialy", (err, results) => res.json(results));
 });
 
@@ -213,6 +231,9 @@ app.delete('/api/materialy/:id', (req, res) => {
 });
 
 app.get('/api/materialy/:id/kapitoly', (req, res) => {
+    if (materialyUzamceny && req.query.admin !== '1' && req.query.admin !== 'true') {
+        return res.status(403).json({ chyba: 'Materiály jsou uzamčeny.' });
+    }
     const materialId = req.params.id;
 
     db.query(

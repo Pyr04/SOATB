@@ -450,6 +450,14 @@
 
             <section id="sprava-materialu" class="sekce-obsah">
                 <h2>Studijní materiály</h2>
+                <div class="karta" style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--color-danger); background: rgba(220, 38, 38, 0.05);">
+                    <div>
+                        <h3 style="margin-top: 0; color: var(--color-danger);">Uzamčení materiálů</h3>
+                        <p style="color: var(--text-muted); margin: 0; font-size: 13px;">Odepře běžným rekrutům přístup ke všem manuálům (ochrana proti podvádění při testech).</p>
+                    </div>
+                    <button id="btn-lock-mat" class="btn btn-danger" onclick="toggleZamekMaterialu()">Načítám stav...</button>
+                </div>
+                
                 <div class="karta" style="margin-bottom: 30px;">
                     <h3 style="margin-top: 0;">Vytvořit nový manuál</h3>
                     <form id="formNovyMaterial" style="display: flex; gap: 15px; align-items: flex-end;">
@@ -1075,9 +1083,35 @@
             }
         }
 
+        function nactiStavZamku() {
+            fetch('/api/admin/stav-materialu')
+                .then(r => r.json())
+                .then(data => {
+                    const btn = document.getElementById('btn-lock-mat');
+                    if (data.uzamceno) {
+                        btn.innerText = "Odemknout manuály pro rekruty";
+                        btn.className = "btn btn-success";
+                        btn.onclick = () => nastavZamek(false);
+                    } else {
+                        btn.innerText = "Zamknout materiály (Zkouška)";
+                        btn.className = "btn btn-danger";
+                        btn.onclick = () => nastavZamek(true);
+                    }
+                });
+        }
+
+        function nastavZamek(stav) {
+            fetch('/api/admin/toggle-materialy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ je_admin: prihlasenyAdmin.je_admin, uzamceno: stav })
+            }).then(() => nactiStavZamku());
+        }
+
         nactiTabulkuRekrutu();
         initCKEditor();
         renderPreview();
+        nactiStavZamku();
     </script>
 </body>
 </html>

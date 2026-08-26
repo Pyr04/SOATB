@@ -105,8 +105,15 @@
                     document.getElementById('doc-popis').innerText = sanitizeText(mat.popis);
                 });
 
-            fetch(`/api/materialy/${idMaterialu}/kapitoly`)
-                .then(res => res.json())
+            fetch(`/api/materialy/${idMaterialu}/kapitoly?admin=${prihlaseny.je_admin}`)
+                .then(res => {
+                    if (res.status === 403) {
+                        alert("Materiály jsou aktuálně uzamčeny velením.");
+                        window.location.href = 'index.html';
+                        throw new Error("Přístup zamítnut");
+                    }
+                    return res.json();
+                })
                 .then(kapitoly => {
                     const toc = document.getElementById('toc');
                     const obsahKontejner = document.getElementById('doc-kapitoly');
@@ -136,7 +143,8 @@
                             </div>
                         `;
                     });
-                });
+                })
+                .catch(err => console.error(err));
         }
     </script>
 </body>
