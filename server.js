@@ -4,12 +4,13 @@ const path = require('path');
 const multer = require('multer');
 const sharp = require('sharp');
 const fs = require('fs');
+require('dotenv').config();
 
 const app = express();
 const port = 3000;
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const uploadDir = path.join(__dirname, 'public', 'uploads');
@@ -18,14 +19,21 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 const storage = multer.memoryStorage();
-const upload = multer({ storage });
+const upload = multer({ 
+    storage,
+    limits: { fileSize: 50 * 1024 * 1024 } // 50 MB
+});
+
+console.log("=== Zkouším se připojit na hosta:", process.env.DB_HOST, "===");
 
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'soatb'
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME
 });
+
+
 
 db.connect((err) => {
     if (err) throw err;
