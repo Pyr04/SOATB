@@ -41,6 +41,13 @@ db.connect((err) => {
     console.log('Připojeno k databázi soatb.');
 });
 
+// --- POMOCNÁ FUNKCE PRO ZÁPIS LOGŮ ---
+function zapisLog(idRekruta, akce) {
+    db.query("INSERT INTO systemove_logy (id_rekruta, akce) VALUES (?, ?)", [idRekruta, akce], (err) => {
+        if (err) console.error("Chyba při zápisu logu:", err);
+    });
+}
+
 function generujHeslo(delka = 12) {
     const znaky = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
     let heslo = "";
@@ -85,6 +92,20 @@ function removeFiles(urls) {
     });
 }
 
+// --- SYSTÉMOVÉ LOGY (API) ---
+app.get('/api/admin/logy', (req, res) => {
+    const sql = `
+        SELECT l.id, l.akce, l.datum, r.jmeno 
+        FROM systemove_logy l 
+        LEFT JOIN rekruti r ON l.id_rekruta = r.id 
+        ORDER BY l.datum DESC LIMIT 100
+    `;
+    db.query(sql, (err, results) => {
+        if (err) return res.status(500).json({ chyba: err.message });
+        res.json(results);
+    });
+});
+
 // --- ZÁMEK MATERIÁLŮ (API) ---
 app.get('/api/admin/stav-materialu', (req, res) => {
     res.json({ uzamceno: materialyUzamceny });
@@ -93,6 +114,7 @@ app.get('/api/admin/stav-materialu', (req, res) => {
 app.post('/api/admin/toggle-materialy', (req, res) => {
     if (req.body.je_admin) {
         materialyUzamceny = req.body.uzamceno;
+        zapisLog(req.body.id_admina, materialyUzamceny ? 'Uzamkl všechny studijní materiály.' : 'Odemkl studijní materiály pro rekruty.');
         res.json({ uspech: true, uzamceno: materialyUzamceny });
     } else {
         res.status(403).json({ chyba: 'Přístup odepřen.' });
@@ -105,7 +127,7 @@ app.get('/api/rekruti', (req, res) => {
 });
 
 app.post('/api/rekruti', (req, res) => {
-    const { jmeno, hodnost, je_admin } = req.body;
+    const { jmeno, hodnost, je_admin, id_admina } = req.body;
     const login = vytvorLogin(jmeno);
     const heslo = generujHeslo(12);
 
@@ -116,6 +138,8 @@ app.post('/api/rekruti', (req, res) => {
             if (err) return res.status(500).json({ uspech: false, chyba: err.message });
 
             const noveId = result.insertId;
+            zapisLog(id_admina, `Založil nový uživatelský profil pro: ${jmeno}`);
+            
             db.query("SELECT id FROM testy", (err2, testy) => {
                 if (err2 || testy.length === 0) return res.json({ uspech: true });
                 const hodnotyProDb = testy.map(t => [noveId, t.id, 0]);
@@ -126,10 +150,14 @@ app.post('/api/rekruti', (req, res) => {
 });
 
 app.put('/api/rekruti/:id/hodnost', (req, res) => {
-    db.query("UPDATE rekruti SET hodnost = ? WHERE id = ?", [req.body.hodnost, req.params.id], () => res.json({ uspech: true }));
+    db.query("UPDATE rekruti SET hodnost = ? WHERE id = ?", [req.body.hodnost, req.params.id], () => {
+        zapisLog(req.params.id, `Změněna hodnost na: ${req.body.hodnost}`);
+        res.json({ uspech: true });
+    });
 });
 
 app.delete('/api/rekruti/:id', (req, res) => {
+    zapisLog(null, `Smazán uživatelský profil (ID: ${req.params.id})`);
     db.query("DELETE FROM testy_pristupy WHERE id_rekruta = ?", [req.params.id], () => {
         db.query("DELETE FROM zaznamy_testu WHERE id_rekruta = ?", [req.params.id], () => {
             db.query("DELETE FROM rekruti WHERE id = ?", [req.params.id], () => res.json({ uspech: true }));
@@ -146,6 +174,7 @@ app.post('/api/login', (req, res) => {
             if (results.length > 0) {
                 const r = results[0];
                 r.je_admin = Number(r.je_admin);
+                zapisLog(r.id, 'Uživatel se úspěšně přihlásil do portálu.');
                 res.json({ uspech: true, rekrut: r });
             } else {
                 res.status(401).json({ chyba: 'Neplatné jméno nebo heslo.' });
@@ -162,6 +191,7 @@ app.get('/api/testy', (req, res) => {
 app.post('/api/testy', (req, res) => {
     db.query("INSERT INTO testy (nazev, popis) VALUES (?, ?)", [req.body.nazev, req.body.popis], (err, result) => {
         if (err) return res.status(500).json({ uspech: false });
+        zapisLog(null, `Vytvořen nový výcvikový modul: ${req.body.nazev}`);
         res.json({ uspech: true, id: result.insertId });
     });
 });
@@ -169,7 +199,10 @@ app.post('/api/testy', (req, res) => {
 app.delete('/api/testy/:id', (req, res) => {
     db.query("DELETE FROM testy_pristupy WHERE id_testu = ?", [req.params.id], () => {
         db.query("DELETE FROM otazky WHERE id_testu = ?", [req.params.id], () => {
-            db.query("DELETE FROM testy WHERE id = ?", [req.params.id], () => res.json({ uspech: true }));
+            db.query("DELETE FROM testy WHERE id = ?", [req.params.id], () => {
+                zapisLog(null, `Smazán výcvikový modul (ID: ${req.params.id})`);
+                res.json({ uspech: true });
+            });
         });
     });
 });
@@ -214,6 +247,7 @@ app.post('/api/materialy', (req, res) => {
     const { nazev, popis } = req.body;
     db.query("INSERT INTO materialy (nazev, popis) VALUES (?, ?)", [nazev, popis], (err, result) => {
         if (err) return res.status(500).json({ uspech: false });
+        zapisLog(null, `Vytvořen nový manuál: ${nazev}`);
         res.json({ uspech: true, id: result.insertId });
     });
 });
@@ -225,7 +259,10 @@ app.delete('/api/materialy/:id', (req, res) => {
         removeFiles(urls);
 
         db.query("DELETE FROM materialy_kapitoly WHERE id_materialu = ?", [req.params.id], () => {
-            db.query("DELETE FROM materialy WHERE id = ?", [req.params.id], () => res.json({ uspech: true }));
+            db.query("DELETE FROM materialy WHERE id = ?", [req.params.id], () => {
+                zapisLog(null, `Smazán manuál (ID: ${req.params.id})`);
+                res.json({ uspech: true });
+            });
         });
     });
 });
@@ -346,9 +383,15 @@ app.post('/api/odemknout', (req, res) => {
     const { id_rekruta, id_testu } = req.body;
     db.query("SELECT * FROM testy_pristupy WHERE id_rekruta = ? AND id_testu = ?", [id_rekruta, id_testu], (err, result) => {
         if (result.length > 0) {
-            db.query("UPDATE testy_pristupy SET stav = 1 WHERE id_rekruta = ? AND id_testu = ?", [id_rekruta, id_testu], () => res.json({ uspech: true }));
+            db.query("UPDATE testy_pristupy SET stav = 1 WHERE id_rekruta = ? AND id_testu = ?", [id_rekruta, id_testu], () => {
+                zapisLog(id_rekruta, `Bylo odemčeno plnění modulu #${id_testu}`);
+                res.json({ uspech: true });
+            });
         } else {
-            db.query("INSERT INTO testy_pristupy (id_rekruta, id_testu, stav) VALUES (?, ?, 1)", [id_rekruta, id_testu], () => res.json({ uspech: true }));
+            db.query("INSERT INTO testy_pristupy (id_rekruta, id_testu, stav) VALUES (?, ?, 1)", [id_rekruta, id_testu], () => {
+                zapisLog(id_rekruta, `Bylo odemčeno plnění modulu #${id_testu}`);
+                res.json({ uspech: true });
+            });
         }
     });
 });
@@ -377,6 +420,7 @@ app.post('/api/vyhodnotit', (req, res) => {
             [id_rekruta, id_testu, Math.round(procenta), prosel, JSON.stringify(odpovedi)],
             () => {
                 db.query("UPDATE testy_pristupy SET stav = ? WHERE id_rekruta = ? AND id_testu = ?", [novyStav, id_rekruta, id_testu], () => {
+                    zapisLog(id_rekruta, `Odevzdal zkoušku (Modul ${id_testu}) s úspěšností ${Math.round(procenta)}%.`);
                     res.json({ uspech: true, prosel, procenta: Math.round(procenta) });
                 });
             }

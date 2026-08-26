@@ -73,88 +73,106 @@
     </div>
 
     <script>
-        const prihlaseny = JSON.parse(sessionStorage.getItem('prihlasenyRekrut'));
-        if (!prihlaseny) {
-            window.location.href = 'login.html';
-        }
+    const prihlaseny = JSON.parse(sessionStorage.getItem('prihlasenyRekrut'));
+    if (!prihlaseny) { window.location.href = 'login.html'; }
 
-        if (prihlaseny.je_admin === 1 || prihlaseny.je_admin === "1" || prihlaseny.je_admin === true) {
-            document.getElementById('btn-veleni').style.display = 'inline-flex';
-        }
+    if (prihlaseny.je_admin === 1 || prihlaseny.je_admin === "1" || prihlaseny.je_admin === true) {
+        document.getElementById('btn-veleni').style.display = 'inline-flex';
+    }
 
-        const idRekruta = prihlaseny.id;
-        document.getElementById('info-jmeno').innerText = `${prihlaseny.jmeno} (${prihlaseny.hodnost})`;
+    const idRekruta = prihlaseny.id;
+    document.getElementById('info-jmeno').innerText = `${prihlaseny.jmeno} (${prihlaseny.hodnost})`;
 
-        function odhlasit() {
-            sessionStorage.removeItem('prihlasenyRekrut');
-            window.location.href = 'login.html';
-        }
+    function odhlasit() {
+        sessionStorage.removeItem('prihlasenyRekrut');
+        window.location.href = 'login.html';
+    }
 
-        function otevriSekci(idSekce, tlacitko) {
-            document.querySelectorAll('.sekce-obsah').forEach(s => s.classList.remove('aktivni'));
-            if (tlacitko) {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('aktivni'));
-                tlacitko.classList.add('aktivni');
-            }
-            document.getElementById(idSekce).classList.add('aktivni');
+    function otevriSekci(idSekce, tlacitko) {
+        document.querySelectorAll('.sekce-obsah').forEach(s => s.classList.remove('aktivni'));
+        if (tlacitko) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('aktivni'));
+            tlacitko.classList.add('aktivni');
         }
-        
+        document.getElementById(idSekce).classList.add('aktivni');
+    }
+    
+    nactiTestyProRekruta();
+    nactiMaterialy();
+
+    // --- TICHÝ AUTO-REFRESH (KAŽDÝCH 10 SEKUND) ---
+    setInterval(() => {
         nactiTestyProRekruta();
         nactiMaterialy();
+    }, 10000);
 
-        function nactiTestyProRekruta() {
-            const kontejner = document.getElementById('seznam-testu');
-            fetch('/api/testy').then(res => res.json()).then(async testy => { 
-                kontejner.innerHTML = ''; 
-                if (testy.length === 0) { kontejner.innerHTML = '<p style="color: var(--text-muted);">Žádné moduly.</p>'; return; }
+    async function nactiTestyProRekruta() {
+        const kontejner = document.getElementById('seznam-testu');
+        try {
+            // cache: 'no-store' ignoruje paměť prohlížeče a vynutí čistá data ze serveru
+            const res = await fetch('/api/testy', { cache: 'no-store' });
+            const testy = await res.json(); 
+            
+            if (testy.length === 0) { 
+                kontejner.innerHTML = '<p style="color: var(--text-muted);">Žádné moduly.</p>'; 
+                return; 
+            }
 
-                let zobrazeno = 0;
-                for (const test of testy) {
-                    const stavRes = await fetch(`/api/stav/${idRekruta}/${test.id}`);
-                    const stavData = await stavRes.json();
-                    if (stavData.stav !== 0) {
-                        zobrazeno++;
-                        const karta = document.createElement('div');
-                        karta.className = 'karta';
-                        karta.innerHTML = `
+            let zobrazeno = 0;
+            let novyHtml = ''; // Kód sestavíme do paměti, aby se zabránilo problikávání obrazovky
+
+            for (const test of testy) {
+                const stavRes = await fetch(`/api/stav/${idRekruta}/${test.id}`, { cache: 'no-store' });
+                const stavData = await stavRes.json();
+                
+                if (stavData.stav !== 0) {
+                    zobrazeno++;
+                    novyHtml += `
+                        <div class="karta">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div><h2 style="margin-bottom: 4px; border: none; padding: 0;">${test.nazev}</h2><p style="color: var(--text-muted); margin: 0; font-size: 14px;">${test.popis}</p></div>
                                 <div>${stavData.stav === 1 ? `<a href="test.html?id_rekruta=${idRekruta}&id_testu=${test.id}" class="btn btn-primary">Spustit zkoušku</a>` : '<span class="badge badge-success">✓ Splněno</span>'}</div>
-                            </div>`;
-                        kontejner.appendChild(karta);
-                    }
+                            </div>
+                        </div>`;
                 }
-                if (zobrazeno === 0) kontejner.innerHTML = '<p style="color: var(--text-muted); font-style: italic; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 8px; border: 1px dashed var(--border-color);">Momentálně nemáš od velení přidělené žádné aktivní výcvikové moduly.</p>';
-            });
-        }
-
-        function nactiMaterialy() {
-            const kontejner = document.getElementById('seznam-materialu');
+            }
             
-            fetch('/api/materialy?admin=' + prihlaseny.je_admin).then(async res => {
-                if (res.status === 403) {
-                    kontejner.innerHTML = '<div style="padding: 30px; background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.3); border-radius: 8px; color: var(--color-danger); text-align: center;"><i class="fa-solid fa-lock" style="font-size: 32px; margin-bottom: 15px;"></i><br><b style="font-size: 18px;">Přístup odepřen</b><br><span style="color: var(--text-muted); font-size: 14px;">Velení dočasně uzamklo studijní materiály (probíhá test).</span></div>';
-                    return null;
-                }
-                return res.json();
-            }).then(materialy => {
-                if (!materialy) return; 
-                kontejner.innerHTML = '';
-                if(materialy.length === 0) {
-                    kontejner.innerHTML = '<p style="color: var(--text-muted); font-style: italic;">Velení zatím nevložilo žádné studijní materiály.</p>';
-                    return;
-                }
-                materialy.forEach(m => {
-                    kontejner.innerHTML += `
-                        <div class="karta">
-                            <h3 style="margin-top: 0; color: #bfae95;"><i class="fa-solid fa-file-lines" style="margin-right: 10px;"></i>${m.nazev}</h3>
-                            <p style="color: var(--text-muted); font-size: 14px;">${m.popis}</p>
-                            <a href="cteni.html?id=${m.id}" class="btn btn-nav" style="margin: 15px 0 0 0; display: inline-block; text-decoration: none;">Otevřít interaktivní manuál</a>
-                        </div>
-                    `;
-                });
+            if (zobrazeno === 0) {
+                kontejner.innerHTML = '<p style="color: var(--text-muted); font-style: italic; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 8px; border: 1px dashed var(--border-color);">Momentálně nemáš od velení přidělené žádné aktivní výcvikové moduly.</p>';
+            } else {
+                kontejner.innerHTML = novyHtml; // Překreslení se provede naráz
+            }
+        } catch(e) { console.error("Chyba načítání:", e); }
+    }
+
+    function nactiMaterialy() {
+        const kontejner = document.getElementById('seznam-materialu');
+        
+        fetch('/api/materialy?admin=' + prihlaseny.je_admin, { cache: 'no-store' }).then(async res => {
+            if (res.status === 403) {
+                kontejner.innerHTML = '<div style="padding: 30px; background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.3); border-radius: 8px; color: var(--color-danger); text-align: center;"><i class="fa-solid fa-lock" style="font-size: 32px; margin-bottom: 15px;"></i><br><b style="font-size: 18px;">Přístup odepřen</b><br><span style="color: var(--text-muted); font-size: 14px;">Velení dočasně uzamklo studijní materiály (probíhá certifikační zkouška).</span></div>';
+                return null;
+            }
+            return res.json();
+        }).then(materialy => {
+            if (!materialy) return; 
+            if(materialy.length === 0) {
+                kontejner.innerHTML = '<p style="color: var(--text-muted); font-style: italic;">Velení zatím nevložilo žádné studijní materiály.</p>';
+                return;
+            }
+            let novyHtml = '';
+            materialy.forEach(m => {
+                novyHtml += `
+                    <div class="karta">
+                        <h3 style="margin-top: 0; color: #bfae95;"><i class="fa-solid fa-file-lines" style="margin-right: 10px;"></i>${m.nazev}</h3>
+                        <p style="color: var(--text-muted); font-size: 14px;">${m.popis}</p>
+                        <a href="cteni.html?id=${m.id}" class="btn btn-nav" style="margin: 15px 0 0 0; display: inline-block; text-decoration: none;">Otevřít interaktivní manuál</a>
+                    </div>
+                `;
             });
-        }
-    </script>
+            kontejner.innerHTML = novyHtml;
+        });
+    }
+</script>
 </body>
 </html>
