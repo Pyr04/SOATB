@@ -151,7 +151,7 @@ app.post('/api/rekruti', (req, res) => {
 
 app.put('/api/rekruti/:id/hodnost', (req, res) => {
     db.query("UPDATE rekruti SET hodnost = ? WHERE id = ?", [req.body.hodnost, req.params.id], () => {
-        zapisLog(req.params.id, `Změněna hodnost na: ${req.body.hodnost}`);
+        zapisLog(req.body.id_admina, `Změnil hodnost člena (ID: ${req.params.id}) na: ${req.body.hodnost}`);
         res.json({ uspech: true });
     });
 });
@@ -228,7 +228,7 @@ app.delete('/api/otazky/:id', (req, res) => {
     db.query("DELETE FROM otazky WHERE id = ?", [req.params.id], () => res.json({ uspech: true }));
 });
 
-// --- MATERIÁLY ---
+// --- MATERIÁLY A KAPITOLY (PDF PODPORA) ---
 app.get('/api/materialy', (req, res) => {
     if (materialyUzamceny && req.query.admin !== '1' && req.query.admin !== 'true') {
         return res.status(403).json({ chyba: 'Materiály jsou uzamčeny.' });
@@ -253,9 +253,12 @@ app.post('/api/materialy', (req, res) => {
 });
 
 app.delete('/api/materialy/:id', (req, res) => {
-    db.query("SELECT obrazky FROM materialy_kapitoly WHERE id_materialu = ?", [req.params.id], (err, results) => {
+    db.query("SELECT obsah, obrazky FROM materialy_kapitoly WHERE id_materialu = ?", [req.params.id], (err, results) => {
         const urls = [];
-        (results || []).forEach(r => urls.push(...parseObrazky(r.obrazky)));
+        (results || []).forEach(r => {
+            urls.push(...parseObrazky(r.obrazky));
+            if (r.obsah && r.obsah.endsWith('.pdf')) urls.push(r.obsah);
+        });
         removeFiles(urls);
 
         db.query("DELETE FROM materialy_kapitoly WHERE id_materialu = ?", [req.params.id], () => {
@@ -277,10 +280,7 @@ app.get('/api/materialy/:id/kapitoly', (req, res) => {
         "SELECT id, id_materialu, nazev_kapitoly, obsah, obrazky FROM materialy_kapitoly WHERE id_materialu = ? ORDER BY id ASC",
         [materialId],
         (err, results) => {
-            if (err) {
-                console.error('CHYBA při načítání kapitol:', err);
-                return res.status(500).json({ chyba: 'Chyba databáze při načítání kapitol.' });
-            }
+            if (err) return res.status(500).json({ chyba: 'Chyba databáze při načítání kapitol.' });
 
             const mapped = (results || []).map(k => ({
                 id: k.id,
@@ -289,84 +289,95 @@ app.get('/api/materialy/:id/kapitoly', (req, res) => {
                 obsah: k.obsah,
                 obrazky: parseObrazky(k.obrazky)
             }));
-
             res.json(mapped);
         }
     );
 });
 
-app.post('/api/kapitoly', upload.array('obrazky', 12), async (req, res) => {
+app.post('/api/kapitoly', upload.any(), async (req, res) => {
     try {
-        const { id_materialu, nazev_kapitoly, obsah } = req.body;
-        const obrazky = [];
+        const { id_materialu, nazev_kapitoly, typ_obsahu } = req.body;
+        let obsahProDb = req.body.obsah || '';
+        let obrazkyProDb = [];
 
-        if (req.files && req.files.length > 0) {
-            for (const file of req.files) {
-                obrazky.push(await ulozObrazek(file.buffer));
+        if (typ_obsahu === 'pdf') {
+            const pdfFile = req.files && req.files.find(f => f.fieldname === 'pdfSoubor');
+            if (pdfFile) {
+                const unikatniNazev = Date.now() + '-' + Math.round(Math.random() * 1E9) + '.pdf';
+                const outputPath = path.join(uploadDir, unikatniNazev);
+                fs.writeFileSync(outputPath, pdfFile.buffer);
+                obsahProDb = '/uploads/' + unikatniNazev;
+            }
+        } else {
+            const obrazkyFiles = req.files ? req.files.filter(f => f.fieldname === 'obrazky') : [];
+            for (const file of obrazkyFiles) {
+                obrazkyProDb.push(await ulozObrazek(file.buffer));
             }
         }
 
         db.query(
             "INSERT INTO materialy_kapitoly (id_materialu, nazev_kapitoly, obsah, obrazky) VALUES (?, ?, ?, ?)",
-            [id_materialu, nazev_kapitoly, obsah, JSON.stringify(obrazky)],
+            [id_materialu, nazev_kapitoly, obsahProDb, JSON.stringify(obrazkyProDb)],
             (err, result) => {
-                if (err) {
-                    console.error("CHYBA PŘI VKLÁDÁNÍ KAPITOLY:", err);
-                    return res.status(500).json({ uspech: false, chyba: err.message });
-                }
+                if (err) return res.status(500).json({ uspech: false, chyba: err.message });
                 res.json({ uspech: true, id: result.insertId });
             }
         );
     } catch (error) {
-        console.log("CHYBA PŘI VKLÁDÁNÍ KAPITOLY:", error.message);
         res.status(500).json({ uspech: false, chyba: error.message });
     }
 });
 
-app.put('/api/kapitoly/:id', upload.array('obrazky', 12), async (req, res) => {
+app.put('/api/kapitoly/:id', upload.any(), async (req, res) => {
     try {
         const kapId = req.params.id;
-        const { nazev_kapitoly, obsah } = req.body;
+        const { nazev_kapitoly, typ_obsahu, obsah_existujici } = req.body;
 
-        db.query("SELECT obrazky FROM materialy_kapitoly WHERE id = ?", [kapId], async (err, results) => {
-            if (err) {
-                console.error('CHYBA SELECT kapitoly:', err);
-                return res.status(500).json({ uspech: false, chyba: err.message });
-            }
-            if (!results || results.length === 0) {
-                return res.status(404).json({ uspech: false, chyba: 'Kapitola nenalezena.' });
-            }
+        db.query("SELECT obsah, obrazky FROM materialy_kapitoly WHERE id = ?", [kapId], async (err, results) => {
+            if (err || results.length === 0) return res.status(404).json({ uspech: false });
 
-            let obrazky = parseObrazky(results[0].obrazky);
+            let obsahProDb = typ_obsahu === 'pdf' ? obsah_existujici : (req.body.obsah || '');
+            let obrazkyProDb = typ_obsahu === 'text' ? parseObrazky(results[0].obrazky) : [];
 
-            if (req.files && req.files.length > 0) {
-                for (const file of req.files) {
-                    obrazky.push(await ulozObrazek(file.buffer));
+            if (typ_obsahu === 'pdf') {
+                const pdfFile = req.files && req.files.find(f => f.fieldname === 'pdfSoubor');
+                if (pdfFile) {
+                    const unikatniNazev = Date.now() + '-' + Math.round(Math.random() * 1E9) + '.pdf';
+                    const outputPath = path.join(uploadDir, unikatniNazev);
+                    fs.writeFileSync(outputPath, pdfFile.buffer);
+                    obsahProDb = '/uploads/' + unikatniNazev;
+                    
+                    // Smažeme staré PDF pokud jsme nahráli nové
+                    if (obsah_existujici && obsah_existujici.endsWith('.pdf')) removeFiles([obsah_existujici]);
                 }
+            } else {
+                const obrazkyFiles = req.files ? req.files.filter(f => f.fieldname === 'obrazky') : [];
+                for (const file of obrazkyFiles) {
+                    obrazkyProDb.push(await ulozObrazek(file.buffer));
+                }
+                if (results[0].obsah && results[0].obsah.endsWith('.pdf')) removeFiles([results[0].obsah]);
             }
 
             db.query(
                 "UPDATE materialy_kapitoly SET nazev_kapitoly = ?, obsah = ?, obrazky = ? WHERE id = ?",
-                [nazev_kapitoly, obsah, JSON.stringify(obrazky), kapId],
+                [nazev_kapitoly, obsahProDb, JSON.stringify(obrazkyProDb), kapId],
                 (err2) => {
-                    if (err2) {
-                        console.error('CHYBA UPDATE kapitoly:', err2);
-                        return res.status(500).json({ uspech: false, chyba: err2.message });
-                    }
+                    if (err2) return res.status(500).json({ uspech: false, chyba: err2.message });
                     res.json({ uspech: true });
                 }
             );
         });
     } catch (error) {
-        console.log("CHYBA PŘI ÚPRAVĚ KAPITOLY:", error.message);
         res.status(500).json({ uspech: false, chyba: error.message });
     }
 });
 
 app.delete('/api/kapitoly/:id', (req, res) => {
-    db.query("SELECT obrazky FROM materialy_kapitoly WHERE id = ?", [req.params.id], (err, results) => {
+    db.query("SELECT obsah, obrazky FROM materialy_kapitoly WHERE id = ?", [req.params.id], (err, results) => {
         if (results && results.length > 0) {
-            removeFiles(parseObrazky(results[0].obrazky));
+            const urls = parseObrazky(results[0].obrazky);
+            if (results[0].obsah && results[0].obsah.endsWith('.pdf')) urls.push(results[0].obsah);
+            removeFiles(urls);
         }
         db.query("DELETE FROM materialy_kapitoly WHERE id = ?", [req.params.id], () => res.json({ uspech: true }));
     });
@@ -384,12 +395,12 @@ app.post('/api/odemknout', (req, res) => {
     db.query("SELECT * FROM testy_pristupy WHERE id_rekruta = ? AND id_testu = ?", [id_rekruta, id_testu], (err, result) => {
         if (result.length > 0) {
             db.query("UPDATE testy_pristupy SET stav = 1 WHERE id_rekruta = ? AND id_testu = ?", [id_rekruta, id_testu], () => {
-                zapisLog(id_rekruta, `Bylo odemčeno plnění modulu #${id_testu}`);
+                zapisLog(req.body.id_admina, `Odemčel plnění modulu #${id_testu} rekrutovi ID: ${id_rekruta}`);
                 res.json({ uspech: true });
             });
         } else {
             db.query("INSERT INTO testy_pristupy (id_rekruta, id_testu, stav) VALUES (?, ?, 1)", [id_rekruta, id_testu], () => {
-                zapisLog(id_rekruta, `Bylo odemčeno plnění modulu #${id_testu}`);
+                zapisLog(req.body.id_admina, `Odemčel plnění modulu #${id_testu} rekrutovi ID: ${id_rekruta}`);
                 res.json({ uspech: true });
             });
         }

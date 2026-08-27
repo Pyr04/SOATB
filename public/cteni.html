@@ -5,68 +5,54 @@
     <title>SOATB - Čtení materiálu</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- KNIHOVNA PRO PŘÍMÉ VYKRESLOVÁNÍ PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
+
     <style>
         html { scroll-behavior: smooth; }
         .reader-layout { display: flex; height: 100vh; overflow: hidden; background-color: var(--bg-body); }
         .reader-sidebar { width: 300px; background-color: var(--bg-panel); border-right: 1px solid var(--border-color); overflow-y: auto; padding: 30px 20px; display: flex; flex-direction: column; }
         .reader-content { flex: 1; overflow-y: auto; padding: 60px 40px; }
-        .reader-content-inner { max-width: 900px; margin: 0 auto; }
+        
+        .reader-content-inner { max-width: 1200px; width: 100%; margin: 0 auto; }
+        
         .toc-link { display: block; color: var(--text-muted); text-decoration: none; padding: 10px 15px; margin-bottom: 5px; border-radius: 6px; transition: all 0.2s; font-size: 14px; border-left: 2px solid transparent; }
         .toc-link:hover { background: rgba(255,255,255,0.03); color: var(--text-bright); border-left: 2px solid var(--text-muted); }
+        
         .back-btn { display: inline-flex; align-items: center; gap: 10px; color: var(--text-muted); text-decoration: none; margin-bottom: 40px; font-size: 14px; font-weight: 500; transition: 0.2s; }
         .back-btn:hover { color: #fff; }
         .reader-content h1 { font-size: 32px; color: #bfae95; margin-bottom: 10px; }
         .reader-content h2 { font-size: 22px; color: #fff; margin-top: 50px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
-        .chapter-content {
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 12px;
-            padding: 18px 20px;
-            margin-bottom: 18px;
-        }
-        .chapter-content p,
-        .chapter-content li {
-            font-size: 16px;
-            line-height: 1.7;
-            color: var(--text-normal);
-        }
-        .chapter-content img {
-            max-width: 100%;
-            border-radius: 10px;
-            margin: 14px 0;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-        }
-        .chapter-content table {
+        
+        .chapter-content { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 18px 20px; margin-bottom: 18px; }
+        .chapter-content.pdf-mode { padding: 0; background: transparent; border: none; overflow: visible; }
+        
+        /* ZÁKLADNÍ STYL STRÁNKY PDF */
+        .pdf-page-canvas {
             width: 100%;
-            border-collapse: collapse;
-            margin: 14px 0;
+            max-width: 900px; 
+            margin: 0 auto 30px auto;
+            display: block;
+            background-color: #fff;
+            border-radius: 6px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.1);
         }
-        .chapter-content table td,
-        .chapter-content table th {
-            border: 1px solid var(--border-color);
-            padding: 10px;
-            color: var(--text-normal);
-        }
-        .chapter-content blockquote {
-            border-left: 4px solid var(--color-primary);
-            margin: 14px 0;
-            padding: 8px 14px;
-            color: #d4d4d8;
-            background: rgba(255,255,255,0.03);
-        }
-        .chapter-images {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 14px;
-            margin-top: 14px;
-        }
+
+        .chapter-content p, .chapter-content li { font-size: 16px; line-height: 1.7; color: var(--text-normal); }
+        .chapter-content img { max-width: 100%; border-radius: 10px; margin: 14px 0; border: 1px solid var(--border-color); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+        .chapter-images { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 14px; }
     </style>
 </head>
 <body>
     <div class="reader-layout">
         <nav class="reader-sidebar">
-            <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Zpět do výcvikového centra</a>
+            <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Zpět do centra</a>
+            
             <h3 style="color: var(--text-bright); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">Osnova dokumentu</h3>
             <div id="toc">
                 <p style="color: var(--text-muted); font-size: 13px;">Načítám kapitoly...</p>
@@ -78,8 +64,10 @@
                 <span style="color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Oficiální manuál 160th SOAR</span>
                 <h1 id="doc-nazev">Načítám dokument...</h1>
                 <p id="doc-popis" style="color: var(--text-muted); font-size: 18px; margin-bottom: 50px;"></p>
+                
                 <div id="doc-kapitoly"></div>
-                <div style="height: 350px;"></div>
+                
+                <div style="height: 200px;"></div>
             </div>
         </main>
     </div>
@@ -90,10 +78,10 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const idMaterialu = urlParams.get('id');
+        let pdfFronta = []; 
+        window.pdfDokumenty = {}; 
 
-        function sanitizeText(v) {
-            return String(v || '');
-        }
+        function sanitizeText(v) { return String(v || ''); }
 
         if (!idMaterialu) {
             document.getElementById('doc-nazev').innerText = "Chyba: Nebyl vybrán žádný manuál.";
@@ -121,30 +109,129 @@
                     obsahKontejner.innerHTML = '';
 
                     if (!kapitoly || kapitoly.length === 0) {
-                        toc.innerHTML = '<p style="color: var(--text-muted); font-size: 13px;">Dokument nemá žádné kapitoly.</p>';
-                        obsahKontejner.innerHTML = '<p style="color: var(--text-muted);">Velení do tohoto manuálu ještě nevložilo text.</p>';
+                        toc.innerHTML = '<p style="color: var(--text-muted); font-size: 13px;">Dokument nemá žádné nahrané bloky.</p>';
+                        obsahKontejner.innerHTML = '<p style="color: var(--text-muted);">Velení do tohoto manuálu ještě nevložilo obsah.</p>';
                         return;
                     }
 
                     kapitoly.forEach((k) => {
                         const kId = `kapitola-${k.id}`;
-                        toc.innerHTML += `<a href="#${kId}" class="toc-link">${sanitizeText(k.nazev_kapitoly)}</a>`;
+                        toc.innerHTML += `<a href="#${kId}" id="toc-link-${k.id}" class="toc-link">${sanitizeText(k.nazev_kapitoly)}</a>`;
 
-                        const imgs = Array.isArray(k.obrazky) ? k.obrazky : [];
-                        const imageHtml = imgs.length
-                            ? `<div class="chapter-images">${imgs.map(url => `<img src="${url}" alt="Ilustrace k materiálu">`).join('')}</div>`
-                            : '';
+                        const jePdf = k.obsah && k.obsah.endsWith('.pdf');
+                        let obsahHtml = "";
+
+                        if (jePdf) {
+                            const kontejnerId = `pdf-render-${k.id}`;
+                            obsahHtml = `<div id="${kontejnerId}" style="text-align: center; padding: 40px; color: var(--text-muted);"><i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 15px; color: #bfae95;"></i><br>Načítám a analyzuji dokument...</div>`;
+                            pdfFronta.push({ url: k.obsah, id: kontejnerId, dbId: k.id });
+                        } else {
+                            const imgs = Array.isArray(k.obrazky) ? k.obrazky : [];
+                            const imageHtml = imgs.length ? `<div class="chapter-images">${imgs.map(url => `<img src="${url}" alt="Ilustrace k materiálu">`).join('')}</div>` : '';
+                            obsahHtml = `${k.obsah || ''} ${imageHtml}`;
+                        }
 
                         obsahKontejner.innerHTML += `
                             <h2 id="${kId}">${sanitizeText(k.nazev_kapitoly)}</h2>
-                            <div class="chapter-content">
-                                ${k.obsah || ''}
-                                ${imageHtml}
+                            <div class="chapter-content ${jePdf ? 'pdf-mode' : ''}">
+                                ${obsahHtml}
                             </div>
                         `;
                     });
+
+                    pdfFronta.forEach(task => vykresliPDF(task.url, task.id, task.dbId));
                 })
                 .catch(err => console.error(err));
+        }
+
+        // --- FUNKCE PRO TVORBU MENU Z PDF ---
+        function vytvorPdfMenuHtml(items, kontejnerId, uroven = 0) {
+            if (!items || items.length === 0) return '';
+            let html = uroven === 0 
+                ? `<div style="margin-left: 15px; border-left: 1px dashed rgba(255,255,255,0.15); padding-left: 8px; margin-bottom: 15px; margin-top: -5px;">` 
+                : `<div style="margin-left: 10px;">`;
+            
+            items.forEach(item => {
+                const destEncoded = encodeURIComponent(JSON.stringify(item.dest));
+                // Odebraná šipka pro vnořené úrovně
+                const icon = uroven === 0 
+                    ? '<i class="fa-solid fa-file-pdf" style="margin-right: 5px; color: var(--color-danger); opacity: 0.7;"></i>' 
+                    : '';
+                
+                const fontSize = 13 - (uroven * 1);
+                
+                html += `<a href="#" onclick="skocNaZalozkuPDF(event, '${kontejnerId}', '${destEncoded}')" class="toc-link" style="font-size: ${fontSize}px; padding: 4px 10px; color: #a1a1aa;">${icon} ${item.title}</a>`;
+                
+                if (item.items && item.items.length > 0) {
+                    html += vytvorPdfMenuHtml(item.items, kontejnerId, uroven + 1);
+                }
+            });
+            html += `</div>`;
+            return html;
+        }
+
+        // --- SKOK NA STRÁNKU PODLE ZÁLOŽKY ---
+        async function skocNaZalozkuPDF(event, kontejnerId, destString) {
+            event.preventDefault();
+            const pdf = window.pdfDokumenty[kontejnerId];
+            if (!pdf) return;
+            
+            let dest = null;
+            try { dest = JSON.parse(decodeURIComponent(destString)); } catch(e) { dest = destString; }
+            
+            let explicitDest = dest;
+            if (typeof dest === 'string') explicitDest = await pdf.getDestination(dest);
+            
+            if (explicitDest && explicitDest.length > 0) {
+                pdf.getPageIndex(explicitDest[0]).then(pageIndex => {
+                    const pageNum = pageIndex + 1;
+                    const targetDiv = document.getElementById(`${kontejnerId}-strana-${pageNum}`);
+                    if (targetDiv) {
+                        targetDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }).catch(e => console.error("Záložku se nepodařilo najít na žádné stránce."));
+            }
+        }
+
+        // --- VYKRESLENÍ PDF A VYTĚŽENÍ OSNOVY ---
+        function vykresliPDF(url, kontejnerId, dbId) {
+            pdfjsLib.getDocument(url).promise.then(pdf => {
+                window.pdfDokumenty[kontejnerId] = pdf;
+                const container = document.getElementById(kontejnerId);
+                container.innerHTML = ''; 
+                
+                for(let i = 1; i <= pdf.numPages; i++) {
+                    const strankaObal = document.createElement('div');
+                    strankaObal.id = `${kontejnerId}-strana-${i}`;
+                    container.appendChild(strankaObal);
+                    
+                    pdf.getPage(i).then(page => {
+                        const canvas = document.createElement('canvas');
+                        canvas.className = 'pdf-page-canvas';
+                        const viewport = page.getViewport({ scale: 1.5 });
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        
+                        document.getElementById(`${kontejnerId}-strana-${i}`).appendChild(canvas);
+                        page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport });
+                    });
+                }
+
+                pdf.getOutline().then(outline => {
+                    if (outline && outline.length > 0) {
+                        const tocZaznamDb = document.getElementById(`toc-link-${dbId}`);
+                        const pdfMenuHtml = vytvorPdfMenuHtml(outline, kontejnerId);
+                        
+                        if (tocZaznamDb) {
+                            tocZaznamDb.insertAdjacentHTML('afterend', pdfMenuHtml);
+                        }
+                    }
+                });
+
+            }).catch(err => {
+                console.error("Chyba PDF:", err);
+                document.getElementById(kontejnerId).innerHTML = '<span style="color: var(--color-danger);"><i class="fa-solid fa-triangle-exclamation"></i> Soubor PDF se nepodařilo vykreslit. Zkontrolujte, zda není poškozený.</span>';
+            });
         }
     </script>
 </body>

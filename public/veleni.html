@@ -7,6 +7,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
 
+    <!-- KNIHOVNA PRO PŘÍMÉ VYKRESLOVÁNÍ PDF V NÁHLEDU -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
+
     <script>
         const prihlasenyAdmin = JSON.parse(sessionStorage.getItem('prihlasenyRekrut'));
         if (!prihlasenyAdmin || (prihlasenyAdmin.je_admin !== 1 && prihlasenyAdmin.je_admin !== "1" && prihlasenyAdmin.je_admin !== true)) {
@@ -16,342 +22,58 @@
     </script>
 
     <style>
-        .dropdown {
-            position: relative;
-            display: inline-block;
-        }
-
-        .dropdown-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            font-size: 20px;
-            font-weight: bold;
-            cursor: pointer;
-            padding: 2px 10px;
-            border-radius: 4px;
-            transition: all 0.2s;
-        }
-
-        .dropdown-btn:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-            color: var(--text-bright);
-        }
-
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            right: 0;
-            top: 100%;
-            background-color: #0b0b0d;
-            min-width: 180px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            box-shadow: 0px 10px 25px rgba(0,0,0,0.8);
-            z-index: 100;
-            overflow: hidden;
-        }
-
-        .dropdown-content.show {
-            display: block;
-            animation: fadeIn 0.15s ease-out;
-        }
-
-        .dropdown-item {
-            color: var(--text-normal);
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-            font-size: 13px;
-            cursor: pointer;
-            border: none;
-            background: none;
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-btn { background: transparent; border: none; color: var(--text-muted); font-size: 20px; font-weight: bold; cursor: pointer; padding: 2px 10px; border-radius: 4px; transition: all 0.2s; }
+        .dropdown-btn:hover { background-color: rgba(255, 255, 255, 0.05); color: var(--text-bright); }
+        .dropdown-content { display: none; position: absolute; right: 0; top: 100%; background-color: #0b0b0d; min-width: 180px; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0px 10px 25px rgba(0,0,0,0.8); z-index: 100; overflow: hidden; }
+        .dropdown-content.show { display: block; animation: fadeIn 0.15s ease-out; }
+        .dropdown-item { color: var(--text-normal); padding: 12px 16px; text-decoration: none; display: block; font-size: 13px; cursor: pointer; border: none; background: none; width: 100%; text-align: left; font-family: 'Inter', sans-serif; font-weight: 500; }
+        .dropdown-item:hover { background-color: rgba(255, 255, 255, 0.04); color: var(--text-bright); }
+        .dropdown-item.danger { color: var(--color-danger); }
+        .dropdown-item.danger:hover { background-color: rgba(220, 38, 38, 0.1); }
+        .panel-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; align-items: start; }
+        .lux-card { background: linear-gradient(180deg, rgba(18,18,20,0.98), rgba(10,10,12,0.98)); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.55); overflow: hidden; }
+        .lux-card-header { padding: 18px 22px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; }
+        .lux-card-header h3 { margin: 0; font-size: 15px; letter-spacing: 0.5px; text-transform: uppercase; color: #f5f5f5; }
+        .lux-card-body { padding: 22px; }
+        .editor-shell { display: grid; grid-template-columns: 1fr; gap: 24px; }
+        .editor-topbar { display: flex; justify-content: space-between; gap: 20px; align-items: center; flex-wrap: wrap; }
+        .editor-title { font-size: 26px; color: #fff; margin: 0 0 6px 0; }
+        .editor-subtitle { color: var(--text-muted); margin: 0; font-size: 14px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        .form-label { display: block; margin-bottom: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px; font-weight: 600; }
+        .lux-input { width: 100%; box-sizing: border-box; padding: 12px 14px; background: #000; border: 1px solid var(--border-color); color: #fff; border-radius: 10px; font-family: 'Inter', sans-serif; }
+        .editor-wrap { border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; overflow: hidden; background: #fff; }
+        .ck-editor__editable { min-height: 380px; background: #fff !important; color: #111 !important; }
+        .ck.ck-editor__main > .ck-editor__editable { border-radius: 0 0 12px 12px; }
+        .ck.ck-toolbar { border-radius: 12px 12px 0 0; background: #101114 !important; border-color: rgba(255,255,255,0.08) !important; }
+        .ck-toolbar .ck-button, .ck-toolbar .ck-dropdown__button { color: #e4e4e7 !important; }
+        .ck-toolbar .ck-button:hover, .ck-toolbar .ck-dropdown__button:hover { background: rgba(255,255,255,0.06) !important; }
+        .preview-panel { border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; background: #0c0c0f; padding: 22px; min-height: 560px; }
+        .preview-panel .preview-inner { border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; background: rgba(255,255,255,0.02); padding: 18px; min-height: 490px; overflow: hidden;}
+        .preview-panel .preview-kicker { color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .preview-panel .preview-title { font-size: 28px; color: #bfae95; margin: 0 0 14px 0; line-height: 1.2; }
+        .preview-panel .preview-content { color: var(--text-normal); line-height: 1.7; }
+        .preview-panel .preview-content img { max-width: 100%; border-radius: 10px; margin: 14px 0; border: 1px solid var(--border-color); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+        .chapter-list-item { border-bottom: 1px solid var(--border-color); padding: 16px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; }
+        .chapter-list-item:last-child { border-bottom: none; }
+        .chapter-card { background: linear-gradient(180deg, rgba(18,18,20,0.98), rgba(10,10,12,0.98)); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.55); overflow: hidden; }
+        .chapter-card-header { padding: 18px 22px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; }
+        .chapter-card-header h3 { margin: 0; font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px; color: #f5f5f5; }
+        .chapter-card-body { padding: 22px; }
+        
+        /* Nový styl pro PDF renderované v náhledu */
+        .admin-pdf-canvas {
             width: 100%;
-            text-align: left;
-            font-family: 'Inter', sans-serif;
-            font-weight: 500;
-        }
-
-        .dropdown-item:hover {
-            background-color: rgba(255, 255, 255, 0.04);
-            color: var(--text-bright);
-        }
-
-        .dropdown-item.danger {
-            color: var(--color-danger);
-        }
-
-        .dropdown-item.danger:hover {
-            background-color: rgba(220, 38, 38, 0.1);
-        }
-
-        .panel-grid {
-            display: grid;
-            grid-template-columns: 1.1fr 0.9fr;
-            gap: 24px;
-            align-items: start;
-        }
-
-        .lux-card {
-            background: linear-gradient(180deg, rgba(18,18,20,0.98), rgba(10,10,12,0.98));
-            border: 1px solid rgba(255,255,255,0.07);
-            border-radius: 16px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.55);
-            overflow: hidden;
-        }
-
-        .lux-card-header {
-            padding: 18px 22px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .lux-card-header h3 {
-            margin: 0;
-            font-size: 15px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            color: #f5f5f5;
-        }
-
-        .lux-card-body {
-            padding: 22px;
-        }
-
-        .editor-shell {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
-        }
-
-        .editor-topbar {
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .editor-title {
-            font-size: 26px;
-            color: #fff;
-            margin: 0 0 6px 0;
-        }
-
-        .editor-subtitle {
-            color: var(--text-muted);
-            margin: 0;
-            font-size: 14px;
-        }
-
-        .editor-meta {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .editor-chip {
-            padding: 8px 12px;
-            border-radius: 999px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08);
-            color: var(--text-muted);
-            font-size: 12px;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 18px;
-        }
-
-        .form-label {
+            max-width: 100%;
             display: block;
-            margin-bottom: 8px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .lux-input {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 12px 14px;
-            background: #000;
-            border: 1px solid var(--border-color);
-            color: #fff;
-            border-radius: 10px;
-            font-family: 'Inter', sans-serif;
-        }
-
-        .editor-wrap {
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            overflow: hidden;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             background: #fff;
         }
 
-        .ck-editor__editable {
-            min-height: 380px;
-            background: #fff !important;
-            color: #111 !important;
-        }
-
-        .ck.ck-editor__main > .ck-editor__editable {
-            border-radius: 0 0 12px 12px;
-        }
-
-        .ck.ck-toolbar {
-            border-radius: 12px 12px 0 0;
-            background: #101114 !important;
-            border-color: rgba(255,255,255,0.08) !important;
-        }
-
-        .ck-toolbar .ck-button,
-        .ck-toolbar .ck-dropdown__button {
-            color: #e4e4e7 !important;
-        }
-
-        .ck-toolbar .ck-button:hover,
-        .ck-toolbar .ck-dropdown__button:hover {
-            background: rgba(255,255,255,0.06) !important;
-        }
-
-        .preview-panel {
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 16px;
-            background: #0c0c0f;
-            padding: 22px;
-            min-height: 560px;
-        }
-
-        .preview-panel .preview-inner {
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            background: rgba(255,255,255,0.02);
-            padding: 18px;
-            min-height: 490px;
-        }
-
-        .preview-panel .preview-kicker {
-            color: var(--text-muted);
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
-
-        .preview-panel .preview-title {
-            font-size: 28px;
-            color: #bfae95;
-            margin: 0 0 14px 0;
-            line-height: 1.2;
-        }
-
-        .preview-panel .preview-content {
-            color: var(--text-normal);
-            line-height: 1.7;
-        }
-
-        .preview-panel .preview-content img {
-            max-width: 100%;
-            border-radius: 10px;
-            margin: 14px 0;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-        }
-
-        .preview-panel .preview-content h1,
-        .preview-panel .preview-content h2,
-        .preview-panel .preview-content h3 {
-            color: #fff;
-            margin-top: 18px;
-        }
-
-        .preview-panel .preview-content ul,
-        .preview-panel .preview-content ol {
-            color: var(--text-normal);
-            padding-left: 20px;
-        }
-
-        #preview-obrazky {
-            display: grid;
-            gap: 12px;
-            margin-top: 14px;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        }
-
-        #preview-obrazky img {
-            width: 100%;
-            height: auto;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-        }
-
-        .info-card {
-            background: linear-gradient(180deg, rgba(18,18,20,0.98), rgba(10,10,12,0.98));
-            border: 1px solid rgba(255,255,255,0.07);
-            border-radius: 14px;
-            padding: 20px 22px;
-            color: var(--text-muted);
-            font-size: 14px;
-            line-height: 1.7;
-        }
-
-        .chapter-list-item {
-            border-bottom: 1px solid var(--border-color);
-            padding: 16px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 18px;
-        }
-
-        .chapter-list-item:last-child {
-            border-bottom: none;
-        }
-
-        .chapter-card {
-            background: linear-gradient(180deg, rgba(18,18,20,0.98), rgba(10,10,12,0.98));
-            border: 1px solid rgba(255,255,255,0.07);
-            border-radius: 16px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.55);
-            overflow: hidden;
-        }
-
-        .chapter-card-header {
-            padding: 18px 22px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .chapter-card-header h3 {
-            margin: 0;
-            font-size: 15px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #f5f5f5;
-        }
-
-        .chapter-card-body {
-            padding: 22px;
-        }
-
-        @media (max-width: 1100px) {
-            .panel-grid {
-                grid-template-columns: 1fr;
-            }
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-        }
+        @media (max-width: 1100px) { .panel-grid { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -486,18 +208,10 @@
                     <div class="lux-card">
                         <div class="lux-card-header">
                             <h3>Editor kapitoly</h3>
-                            
                         </div>
                         <div class="lux-card-body">
                             <div class="editor-topbar" style="margin-bottom: 18px;">
-                                <div>
-                                    
-                                    <p class="editor-subtitle">Po kliknutí na „Upravit kapitoly“ se sem načte detail manuálu.</p>
-                                </div>
-                                <div class="editor-meta">
-                                    
-                                    
-                                </div>
+                                <p class="editor-subtitle">Zvol, zda chceš psát text přímo na webu, nebo nahrát 1:1 PDF z Wordu.</p>
                             </div>
 
                             <div class="form-row" style="margin-bottom: 18px;">
@@ -510,27 +224,38 @@
                                     <input type="text" id="nazevKapitoly" class="lux-input" required>
                                 </div>
                             </div>
-
-                            <div style="margin-bottom: 18px;">
-                                <label class="form-label">Obsah kapitoly</label>
-                                <div id="editor" class="editor-wrap"></div>
-                            </div>
-
-                            <div class="form-row" style="margin-bottom: 18px;">
-                                <div>
-                                    <label class="form-label">Obrázky ke kapitole</label>
-                                    <input type="file" id="obrazkyKapitoly" accept="image/*" multiple style="background-color: var(--bg-input); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); color: var(--text-normal); width: 100%; box-sizing: border-box;">
-                                </div>
-                                <div>
-                                    <label class="form-label">Akce</label>
-                                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                        <button type="button" class="btn btn-primary" id="btn-submit-kapitola" onclick="ulozKapitolu()">Přidat kapitolu</button>
-                                        <button type="button" id="btn-cancel-kapitola" class="btn btn-nav" style="display: none; margin: 0;" onclick="zrusitEditaciKapitoly()">Zrušit úpravy</button>
-                                    </div>
-                                </div>
-                            </div>
-
                             
+                            <div style="margin-bottom: 18px;">
+                                <label class="form-label">Formát kapitoly</label>
+                                <select id="typObsahuKapitoly" class="lux-input" onchange="prepniTypObsahu()">
+                                    <option value="pdf">📄 Zobrazovat z PDF dokumentu (Perfektní formátování)</option>
+                                    <option value="text">✍️ Klasický textový editor (Obrázky nakonec)</option>
+                                </select>
+                            </div>
+
+                            <div id="kontejner-pdf" style="margin-bottom: 18px; padding: 20px; border: 1px dashed var(--border-color); border-radius: 8px; background: rgba(255,255,255,0.02);">
+                                <label class="form-label" style="color: #bfae95;">Nahrát PDF soubor</label>
+                                <input type="file" id="pdfKapitoly" accept="application/pdf" class="lux-input" onchange="renderPreview()">
+                                <p id="ukazka-pdf" style="color: var(--color-success); font-size: 13px; margin-top: 10px; font-weight: 500;"></p>
+                            </div>
+
+                            <div id="kontejner-textu" style="display: none;">
+                                <div style="margin-bottom: 18px;">
+                                    <label class="form-label">Obsah kapitoly</label>
+                                    <div id="editor" class="editor-wrap"></div>
+                                </div>
+                                <div style="margin-bottom: 18px;">
+                                    <label class="form-label">Obrázky ke kapitole (Nepovinné)</label>
+                                    <input type="file" id="obrazkyKapitoly" accept="image/*" multiple style="background-color: var(--bg-input); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); color: var(--text-normal); width: 100%; box-sizing: border-box;" onchange="renderPreview()">
+                                </div>
+                            </div>
+
+                            <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px;">
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <button type="button" class="btn btn-primary" id="btn-submit-kapitola" onclick="ulozKapitolu()">Přidat kapitolu</button>
+                                    <button type="button" id="btn-cancel-kapitola" class="btn btn-nav" style="display: none; margin: 0;" onclick="zrusitEditaciKapitoly()">Zrušit úpravy</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -538,7 +263,6 @@
                         <div class="lux-card">
                             <div class="lux-card-header">
                                 <h3>Náhled kapitoly</h3>
-                                
                             </div>
                             <div class="lux-card-body">
                                 <div class="preview-panel">
@@ -567,7 +291,23 @@
             
             <section id="logy" class="sekce-obsah">
                 <h2>Aktivita serveru (Live Log)</h2>
-                <div class="karta" style="max-height: 700px; overflow-y: auto;">
+                
+                <div style="margin-bottom: 24px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="position: relative; flex: 1; min-width: 250px;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 13px; color: var(--text-muted);"></i>
+                        <input type="text" id="log-search" class="lux-input" placeholder="Hledat jméno nebo událost..." style="padding-left: 40px; background: #000;" onkeyup="filtrujLogy()">
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="log-filters">
+                        <button class="btn btn-nav" style="margin: 0; border-color: #bfae95; color: #fff;" onclick="nastavFiltrLogu(this, '')">Všechno</button>
+                        <button class="btn btn-nav" style="margin: 0;" onclick="nastavFiltrLogu(this, 'přihlásil')"><i class="fa-solid fa-right-to-bracket"></i> Přihlášení</button>
+                        <button class="btn btn-nav" style="margin: 0;" onclick="nastavFiltrLogu(this, 'zkoušk')"><i class="fa-solid fa-graduation-cap"></i> Zkoušky</button>
+                        <button class="btn btn-nav" style="margin: 0;" onclick="nastavFiltrLogu(this, 'profil')"><i class="fa-solid fa-user"></i> Profily</button>
+                        <button class="btn btn-nav" style="margin: 0;" onclick="nastavFiltrLogu(this, 'manuál')"><i class="fa-solid fa-book"></i> Manuály</button>
+                    </div>
+                </div>
+
+                <div class="karta" style="max-height: 650px; overflow-y: auto;">
                     <table>
                         <tr><th style="width: 150px;">Datum a čas</th><th style="width: 200px;">Uživatel</th><th>Zaznamenaná akce</th></tr>
                         <tbody id="tabulka-logu"></tbody>
@@ -614,393 +354,319 @@
     </div>
 
     <script>
-    let aktualniIdRekruta = null;
-    let aktualniIdTestuEditor = null;
-    let aktualniIdMaterialuEditor = null;
-    let editovanaKapitolaId = null;
-    let pametKapitol = [];
-    let pametHistorie = [];
-    let ckEditorInstance = null;
-    let previewExistujiciObrazky = [];
+        let aktualniIdRekruta = null;
+        let aktualniIdTestuEditor = null;
+        let aktualniIdMaterialuEditor = null;
+        let editovanaKapitolaId = null;
+        let pametKapitol = [];
+        let pametHistorie = [];
+        let ckEditorInstance = null;
+        let previewExistujiciObrazky = [];
+        let existujiciPdfUrl = null;
 
-    const poradiHodnosti = { "CPT": 9, "1LT": 8, "2LT": 7, "CW5": 6, "CW4": 5, "CW3": 4, "CW2": 3, "WO1": 2, "WOC": 1 };
+        const poradiHodnosti = { "CPT": 9, "1LT": 8, "2LT": 7, "CW5": 6, "CW4": 5, "CW3": 4, "CW2": 3, "WO1": 2, "WOC": 1 };
 
-    function toggleDropdown(id) {
-        document.querySelectorAll('.dropdown-content').forEach(menu => { if(menu.id !== id) menu.classList.remove('show'); });
-        const el = document.getElementById(id);
-        if (el) el.classList.toggle('show');
-    }
-
-    function otevriSekci(idSekce, tlacitko) {
-        document.querySelectorAll('.sekce-obsah').forEach(s => s.classList.remove('aktivni'));
-        if (tlacitko) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('aktivni'));
-            tlacitko.classList.add('aktivni');
+        function toggleDropdown(id) {
+            document.querySelectorAll('.dropdown-content').forEach(menu => { if(menu.id !== id) menu.classList.remove('show'); });
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('show');
         }
-        const sec = document.getElementById(idSekce);
-        if (sec) sec.classList.add('aktivni');
+
+        function otevriSekci(idSekce, tlacitko) {
+            document.querySelectorAll('.sekce-obsah').forEach(s => s.classList.remove('aktivni'));
+            if (tlacitko) {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('aktivni'));
+                tlacitko.classList.add('aktivni');
+            }
+            const sec = document.getElementById(idSekce);
+            if (sec) sec.classList.add('aktivni');
+            
+            if (idSekce === 'sprava-testu') nactiTabulkuTestu();
+            if (idSekce === 'sprava-materialu') nactiTabulkuMaterialu();
+            if (idSekce === 'logy') nactiLogy();
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.matches('.dropdown-btn')) document.querySelectorAll('.dropdown-content').forEach(m => m.classList.remove('show'));
+        }
         
-        if (idSekce === 'sprava-testu') nactiTabulkuTestu();
-        if (idSekce === 'sprava-materialu') nactiTabulkuMaterialu();
-        if (idSekce === 'logy') nactiLogy();
-    }
-
-    window.onclick = function(event) {
-        if (!event.target.matches('.dropdown-btn')) document.querySelectorAll('.dropdown-content').forEach(m => m.classList.remove('show'));
-    }
-
-    function initCKEditor() {
-        const el = document.querySelector('#editor');
-        if (!el || ckEditorInstance) return;
-
-        ClassicEditor.create(el, {
-            toolbar: [
-                'heading', '|',
-                'bold', 'italic', 'underline', 'strikethrough', '|',
-                'fontSize', 'fontColor', 'fontBackgroundColor', '|',
-                'alignment', '|',
-                'bulletedList', 'numberedList', 'outdent', 'indent', '|',
-                'link', 'blockQuote', 'insertTable', 'imageUpload', '|',
-                'undo', 'redo'
-            ],
-            fontSize: { options: [ 'tiny', 'small', 'default', 'big', 'huge' ] },
-            alignment: { options: [ 'left', 'center', 'right', 'justify' ] },
-            image: {
-                toolbar: [
-                    'imageStyle:inline',
-                    'imageStyle:block',
-                    'imageStyle:side',
-                    '|',
-                    'toggleImageCaption',
-                    'imageTextAlternative'
-                ]
+        function prepniTypObsahu() {
+            const typ = document.getElementById('typObsahuKapitoly').value;
+            if (typ === 'pdf') {
+                document.getElementById('kontejner-textu').style.display = 'none';
+                document.getElementById('kontejner-pdf').style.display = 'block';
+            } else {
+                document.getElementById('kontejner-textu').style.display = 'block';
+                document.getElementById('kontejner-pdf').style.display = 'none';
             }
-        }).then(editor => {
-            ckEditorInstance = editor;
-            editor.model.document.on('change:data', renderPreview);
             renderPreview();
-        }).catch(error => console.error(error));
-    }
-
-    function nactiTabulkuRekrutu() {
-        fetch('/api/rekruti', { cache: 'no-store' }).then(res => res.json()).then(rekruti => {
-            rekruti.sort((a, b) => (poradiHodnosti[b.hodnost] || 0) - (poradiHodnosti[a.hodnost] || 0));
-            const tab = document.getElementById('tabulka-rekrutu');
-            if (!tab) return;
-            
-            let novyHtml = '';
-            rekruti.forEach(r => {
-                const adminStitek = r.je_admin ? '<span class="badge badge-warning" style="margin-left: 8px; font-size: 10px;">ADMIN</span>' : '';
-                novyHtml += `<tr>
-                    <td><strong style="color: #fff;">${r.jmeno}</strong> ${adminStitek}</td>
-                    <td><span class="badge badge-default">${r.hodnost}</span></td>
-                    <td><span style="color: var(--text-muted); font-size: 12px;">${r.login || 'N/A'}</span></td>
-                    <td><span style="color: var(--color-warning); font-family: monospace; font-size: 13px;">${r.heslo || 'N/A'}</span></td>
-                    <td style="text-align: center;">
-                        <div class="dropdown">
-                            <button class="dropdown-btn" onclick="toggleDropdown('drop-rekrut-${r.id}')">⋮</button>
-                            <div id="drop-rekrut-${r.id}" class="dropdown-content" style="right: 30px;">
-                                <button class="dropdown-item" onclick="otevriDetailRekruta(${r.id}, '${r.jmeno}', '${r.hodnost}')"><i class="fa-solid fa-folder-open"></i> Spravovat profil</button>
-                                <button class="dropdown-item danger" onclick="smazatRekrutaZeSeznamu(${r.id})"><i class="fa-solid fa-trash"></i> Smazat profil</button>
-                            </div>
-                        </div>
-                    </td>
-                </tr>`;
-            });
-            tab.innerHTML = novyHtml;
-        });
-    }
-
-    function otevriDetailRekruta(id, jmeno, aktualniHodnost) {
-        aktualniIdRekruta = id;
-        otevriSekci('detail', null);
-        document.getElementById('detail-jmeno').innerText = 'Složka: ' + jmeno;
-        const hodSelect = document.getElementById('detail-zmena-hodnosti');
-        if (hodSelect && aktualniHodnost) hodSelect.value = aktualniHodnost;
-
-        fetch('/api/testy', { cache: 'no-store' }).then(res => res.json()).then(testy => {
-            const kontejner = document.getElementById('seznam-testu-rekruta');
-            if (!kontejner) return;
-            kontejner.innerHTML = '';
-            testy.forEach(test => {
-                kontejner.innerHTML += `<div style="border-bottom: 1px solid var(--border-color); padding: 16px 0; display: flex; justify-content: space-between; align-items: center;"><strong style="color: #e4e4e7;">${test.nazev}</strong><span id="stav-testu-${test.id}">...</span></div>`;
-                nactiStavTestu(id, test.id);
-            });
-        });
-
-        fetch(`/api/rekruti/${id}/zaznamy`, { cache: 'no-store' }).then(res => res.json()).then(zaznamy => {
-            pametHistorie = zaznamy;
-            const tabHist = document.getElementById('tabulka-historie');
-            if (!tabHist) return;
-            
-            if (zaznamy.length === 0) {
-                tabHist.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Žádné záznamy.</td></tr>';
-                return;
-            }
-            
-            let novyHtml = '';
-            zaznamy.forEach(z => {
-                const d = new Date(z.datum);
-                const datumText = d.toLocaleDateString('cs-CZ') + ' ' + d.toLocaleTimeString('cs-CZ', {hour: '2-digit', minute:'2-digit'});
-                const stitek = z.prosel ? '<span class="badge badge-success">Splněno</span>' : '<span class="badge badge-default" style="color: var(--color-danger); border-color: rgba(220, 38, 38, 0.3);">Nesplněno</span>';
-                novyHtml += `<tr><td style="color: var(--text-muted); font-size: 13px;">${datumText}</td><td><strong style="color: #fff;">${z.nazev}</strong></td><td>${stitek} <strong style="color: ${z.prosel ? '#4ade80' : '#f87171'}; margin-left: 10px;">${z.procenta}%</strong></td><td style="text-align: center;"><button class="btn btn-nav" style="margin: 0; padding: 6px 12px; font-size: 12px;" onclick="ukazDetailZaznamu(${z.id})"><i class="fa-solid fa-magnifying-glass"></i></button></td></tr>`;
-            });
-            tabHist.innerHTML = novyHtml;
-        });
-    }
-
-    function ukazDetailZaznamu(idZaznamu) {
-        const zaznam = pametHistorie.find(z => z.id === idZaznamu);
-        if (!zaznam) return;
-        const odpovediRekruta = typeof zaznam.odpovedi === 'string' ? JSON.parse(zaznam.odpovedi) : zaznam.odpovedi;
-        const d = new Date(zaznam.datum);
-        document.getElementById('zaznam-modal').style.display = 'flex';
-        document.getElementById('modal-nadpis').innerText = zaznam.nazev;
-        document.getElementById('modal-podnadpis').innerText = `Odevzdáno: ${d.toLocaleDateString('cs-CZ')} ${d.toLocaleTimeString('cs-CZ', {hour: '2-digit', minute:'2-digit'})} | Dosaženo: ${zaznam.procenta}%`;
-
-        const kontejner = document.getElementById('modal-otazky');
-        if (!kontejner) return;
-        kontejner.innerHTML = 'Načítám...';
-        fetch(`/api/admin/testy/${zaznam.id_testu}/otazky`, { cache: 'no-store' }).then(res => res.json()).then(otazkyDb => {
-            let novyHtml = '';
-            otazkyDb.forEach((o, index) => {
-                const jeSpravne = odpovediRekruta[o.id] === o.spravna_odpoved;
-                novyHtml += `
-                    <div style="background: rgba(255,255,255,0.02); border: 1px solid ${jeSpravne ? 'rgba(22, 163, 74, 0.3)' : 'rgba(220, 38, 38, 0.3)'}; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
-                        <p style="margin: 0 0 10px 0; color: #fff; font-weight: 500;">${index + 1}. ${o.zneni}</p>
-                        <div style="display: flex; gap: 10px; align-items: flex-start; color: var(--text-muted); font-size: 13px;">
-                            <span>${jeSpravne ? '<i class="fa-solid fa-check" style="color: #4ade80;"></i>' : '<i class="fa-solid fa-xmark" style="color: #f87171;"></i>'}</span>
-                            <div>
-                                <span><strong>Zvolil:</strong> <span style="color: ${jeSpravne ? '#4ade80' : '#f87171'}">${o['odpoved_' + odpovediRekruta[o.id]] || 'Nevyplněno'}</span></span><br>
-                                ${!jeSpravne ? `<span><strong>Správně:</strong> ${o['odpoved_' + o.spravna_odpoved]}</span>` : ''}
-                            </div>
-                        </div>
-                    </div>`;
-            });
-            kontejner.innerHTML = novyHtml;
-        });
-    }
-
-    function zavriModal() {
-        document.getElementById('zaznam-modal').style.display = 'none';
-    }
-
-    function zmenHodnost() {
-        fetch(`/api/rekruti/${aktualniIdRekruta}/hodnost`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ hodnost: document.getElementById('detail-zmena-hodnosti').value })
-        }).then(() => nactiTabulkuRekrutu());
-    }
-
-    function nactiStavTestu(idRekruta, idTestu) {
-        fetch(`/api/stav/${idRekruta}/${idTestu}`, { cache: 'no-store' }).then(res => res.json()).then(data => {
-            const box = document.getElementById(`stav-testu-${idTestu}`);
-            if (!box) return;
-            if (data.stav === 0) box.innerHTML = `<button class="btn btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="odemkniTest(${idRekruta}, ${idTestu})">Odemknout</button>`;
-            else if (data.stav === 1) box.innerHTML = '<span class="badge badge-warning">Čeká na splnění</span>';
-            else box.innerHTML = '<span class="badge badge-success">Schváleno</span>';
-        });
-    }
-
-    function odemkniTest(idR, idT) {
-        fetch('/api/odemknout', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id_rekruta: idR, id_testu: idT })
-        }).then(() => nactiStavTestu(idR, idT));
-    }
-
-    function smazatRekrutaZeSeznamu(id) {
-        if (confirm('Smazat?')) fetch(`/api/rekruti/${id}`, { method: 'DELETE' }).then(() => nactiTabulkuRekrutu());
-    }
-
-    document.getElementById('formNovyTest').addEventListener('submit', (e) => {
-        e.preventDefault();
-        fetch('/api/testy', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nazev: document.getElementById('nazevTestu').value, popis: document.getElementById('popisTestu').value })
-        }).then(() => { document.getElementById('formNovyTest').reset(); nactiTabulkuTestu(); });
-    });
-
-// --- ODESLÁNÍ FORMULÁŘE PRO NOVÉHO REKRUTA ---
-document.getElementById('formNovyRekrut').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const p = {
-        jmeno: document.getElementById('jmenoRekruta').value,
-        hodnost: document.getElementById('hodnostRekruta').value,
-        je_admin: document.getElementById('jeAdmin').checked,
-        id_admina: prihlasenyAdmin.id // Zde odesíláme tvé ID pro logy
-    };
-    
-    fetch('/api/rekruti', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(p)
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.uspech) {
-            document.getElementById('formNovyRekrut').reset();
-            nactiTabulkuRekrutu();
-            otevriSekci('prehled', document.getElementById('btn-prehled'));
-            nactiLogy(); // Okamžitě aktualizuje tabulku s logy
-        } else {
-            alert('Chyba při zakládání profilu: ' + data.chyba);
         }
-    });
-}); 
 
+        function initCKEditor() {
+            const el = document.querySelector('#editor');
+            if (!el || ckEditorInstance) return;
 
-
-    function nactiTabulkuTestu() {
-        fetch('/api/testy', { cache: 'no-store' }).then(res => res.json()).then(testy => {
-            const tab = document.getElementById('tabulka-testu');
-            if (!tab) return;
-            
-            let novyHtml = '';
-            testy.forEach(t => {
-                novyHtml += `<tr><td><strong style="color: #fff;">${t.nazev}</strong><br><small style="color: #a1a1aa;">${t.popis}</small></td><td style="text-align: center;"><div class="dropdown"><button class="dropdown-btn" onclick="toggleDropdown('drop-test-${t.id}')">⋮</button><div id="drop-test-${t.id}" class="dropdown-content"><button class="dropdown-item" onclick="otevriEditaciTestu(${t.id}, '${t.nazev}')">Upravit test</button><button class="dropdown-item danger" onclick="smazatTest(${t.id})">Smazat test</button></div></div></td></tr>`;
-            });
-            tab.innerHTML = novyHtml;
-        });
-    }
-
-    function smazatTest(id) {
-        if (confirm('Smazat modul?')) fetch(`/api/testy/${id}`, { method: 'DELETE' }).then(() => nactiTabulkuTestu());
-    }
-
-    function otevriEditaciTestu(id, nazev) {
-        aktualniIdTestuEditor = id;
-        otevriSekci('editace-testu', null);
-        document.getElementById('editace-nadpis').innerText = 'Zadání: ' + nazev;
-        nactiOtazkyKTestu(id);
-    }
-
-    function nactiOtazkyKTestu(id) {
-        fetch(`/api/admin/testy/${id}/otazky`, { cache: 'no-store' }).then(res => res.json()).then(otazky => {
-            const list = document.getElementById('seznam-otazek');
-            if (!list) return;
-            
-            let novyHtml = '';
-            otazky.forEach(o => {
-                novyHtml += `<li style="border-bottom: 1px solid var(--border-color); padding: 16px 0; display: flex; justify-content: space-between; align-items: center;"><div><strong style="color: #fff; display: block; margin-bottom: 4px;">${o.zneni}</strong><span style="color: #a1a1aa; font-size: 13px;">A) ${o.odpoved_a} | B) ${o.odpoved_b} | C) ${o.odpoved_c} (Správně: ${o.spravna_odpoved.toUpperCase()})</span></div><button class="btn btn-danger" onclick="smazatOtazku(${o.id})"><i class="fa-solid fa-trash"></i></button></li>`;
-            });
-            list.innerHTML = novyHtml;
-        });
-    }
-
-    function smazatOtazku(id) {
-        if (confirm('Odstranit?')) fetch(`/api/otazky/${id}`, { method: 'DELETE' }).then(() => nactiOtazkyKTestu(aktualniIdTestuEditor));
-    }
-
-    document.getElementById('formNovaOtazka').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const p = {
-            id_testu: aktualniIdTestuEditor,
-            zneni: document.getElementById('zneniOtazky').value,
-            a: document.getElementById('odpovedA').value,
-            b: document.getElementById('odpovedB').value,
-            c: document.getElementById('odpovedC').value,
-            spravna: document.querySelector('input[name="spravnaOdpoved"]:checked').value
-        };
-        fetch('/api/otazky', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(p)
-        }).then(() => {
-            document.getElementById('formNovaOtazka').reset();
-            nactiOtazkyKTestu(aktualniIdTestuEditor);
-        });
-    });
-
-    document.getElementById('formNovyMaterial').addEventListener('submit', (e) => {
-        e.preventDefault();
-        fetch('/api/materialy', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                nazev: document.getElementById('nazevMaterialu').value,
-                popis: document.getElementById('popisMaterialu').value
-            })
-        }).then(() => {
-            document.getElementById('formNovyMaterial').reset();
-            nactiTabulkuMaterialu();
-        });
-    });
-
-    function nactiTabulkuMaterialu() {
-        fetch('/api/materialy', { cache: 'no-store' }).then(res => res.json()).then(mat => {
-            const tab = document.getElementById('tabulka-materialu');
-            if (!tab) return;
-            
-            if (mat.length === 0) {
-                tab.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Zatím nejsou vytvořeny žádné manuály.</td></tr>';
-                return;
-            }
-            
-            let novyHtml = '';
-            mat.forEach(m => {
-                novyHtml += `<tr>
-                    <td><strong style="color: #fff;">${m.nazev}</strong></td>
-                    <td><span style="color: var(--text-muted); font-size: 13px;">${m.popis}</span></td>
-                    <td style="text-align: center;">
-                        <div class="dropdown">
-                            <button class="dropdown-btn" onclick="toggleDropdown('drop-mat-${m.id}')">⋮</button>
-                            <div id="drop-mat-${m.id}" class="dropdown-content" style="right: 30px;">
-                                <button class="dropdown-item" onclick="otevriEditaciMaterialu(${m.id}, '${m.nazev}')"><i class="fa-solid fa-pen-to-square"></i> Upravit kapitoly</button>
-                                <button class="dropdown-item danger" onclick="smazatMaterial(${m.id})"><i class="fa-solid fa-trash"></i> Smazat manuál</button>
-                            </div>
-                        </div>
-                    </td>
-                </tr>`;
-            });
-            tab.innerHTML = novyHtml;
-        });
-    }
-
-    function smazatMaterial(id) {
-        if (confirm('Opravdu smazat celý manuál včetně všech kapitol a obrázků?')) {
-            fetch(`/api/materialy/${id}`, { method: 'DELETE' }).then(() => nactiTabulkuMaterialu());
+            ClassicEditor.create(el, {
+                toolbar: ['heading', '|', 'bold', 'italic', 'underline', 'strikethrough', '|', 'fontSize', 'fontColor', 'fontBackgroundColor', '|', 'alignment', '|', 'bulletedList', 'numberedList', 'outdent', 'indent', '|', 'link', 'blockQuote', 'insertTable', '|', 'undo', 'redo'],
+                fontSize: { options: [ 'tiny', 'small', 'default', 'big', 'huge' ] },
+                alignment: { options: [ 'left', 'center', 'right', 'justify' ] }
+            }).then(editor => {
+                ckEditorInstance = editor;
+                editor.model.document.on('change:data', renderPreview);
+                renderPreview();
+            }).catch(error => console.error(error));
         }
-    }
 
-    function otevriEditaciMaterialu(id, nazev) {
-        aktualniIdMaterialuEditor = id;
-        editovanaKapitolaId = null;
-        previewExistujiciObrazky = [];
-        otevriSekci('editace-materialu', null);
-
-        const matInput = document.getElementById('material-detail-nazev');
-        if (matInput) matInput.value = nazev;
-
-        document.getElementById('editace-mat-nadpis').innerText = 'Správa kapitol: ' + nazev;
-
-        const n = document.getElementById('nazevKapitoly');
-        if (n) n.value = '';
-        const f = document.getElementById('obrazkyKapitoly');
-        if (f) f.value = '';
-
-        const btn = document.getElementById('btn-submit-kapitola');
-        if (btn) btn.innerText = 'Přidat kapitolu';
-
-        const cancel = document.getElementById('btn-cancel-kapitola');
-        if (cancel) cancel.style.display = 'none';
-
-        if (!ckEditorInstance) initCKEditor();
-
-        setTimeout(() => {
-            nactiKapitoly(id);
-            renderPreview();
-        }, 150);
-    }
-
-    function nactiKapitoly(idMat) {
-        if (!idMat) return;
-        fetch(`/api/materialy/${idMat}/kapitoly`, { cache: 'no-store' })
+        document.getElementById('formNovyRekrut').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const p = {
+                jmeno: document.getElementById('jmenoRekruta').value,
+                hodnost: document.getElementById('hodnostRekruta').value,
+                je_admin: document.getElementById('jeAdmin').checked,
+                id_admina: prihlasenyAdmin.id
+            };
+            fetch('/api/rekruti', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) })
             .then(res => res.json())
-            .then(kapitoly => {
+            .then(data => {
+                if (data.uspech) {
+                    document.getElementById('formNovyRekrut').reset();
+                    nactiTabulkuRekrutu();
+                    otevriSekci('prehled', document.getElementById('btn-prehled'));
+                    nactiLogy();
+                } else alert('Chyba: ' + data.chyba);
+            });
+        });
+
+        function nactiTabulkuRekrutu() {
+            fetch('/api/rekruti', { cache: 'no-store' }).then(res => res.json()).then(rekruti => {
+                rekruti.sort((a, b) => (poradiHodnosti[b.hodnost] || 0) - (poradiHodnosti[a.hodnost] || 0));
+                const tab = document.getElementById('tabulka-rekrutu');
+                if (!tab) return;
+                
+                let novyHtml = '';
+                rekruti.forEach(r => {
+                    const adminStitek = r.je_admin ? '<span class="badge badge-warning" style="margin-left: 8px; font-size: 10px;">ADMIN</span>' : '';
+                    novyHtml += `<tr>
+                        <td><strong style="color: #fff;">${r.jmeno}</strong> ${adminStitek}</td>
+                        <td><span class="badge badge-default">${r.hodnost}</span></td>
+                        <td><span style="color: var(--text-muted); font-size: 12px;">${r.login || 'N/A'}</span></td>
+                        <td><span style="color: var(--color-warning); font-family: monospace; font-size: 13px;">${r.heslo || 'N/A'}</span></td>
+                        <td style="text-align: center;">
+                            <div class="dropdown">
+                                <button class="dropdown-btn" onclick="toggleDropdown('drop-rekrut-${r.id}')">⋮</button>
+                                <div id="drop-rekrut-${r.id}" class="dropdown-content" style="right: 30px;">
+                                    <button class="dropdown-item" onclick="otevriDetailRekruta(${r.id}, '${r.jmeno}', '${r.hodnost}')"><i class="fa-solid fa-folder-open"></i> Spravovat profil</button>
+                                    <button class="dropdown-item danger" onclick="smazatRekrutaZeSeznamu(${r.id})"><i class="fa-solid fa-trash"></i> Smazat profil</button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>`;
+                });
+                tab.innerHTML = novyHtml;
+            });
+        }
+
+        function otevriDetailRekruta(id, jmeno, aktualniHodnost) {
+            aktualniIdRekruta = id;
+            otevriSekci('detail', null);
+            document.getElementById('detail-jmeno').innerText = 'Složka: ' + jmeno;
+            const hodSelect = document.getElementById('detail-zmena-hodnosti');
+            if (hodSelect && aktualniHodnost) hodSelect.value = aktualniHodnost;
+
+            fetch('/api/testy', { cache: 'no-store' }).then(res => res.json()).then(testy => {
+                const kontejner = document.getElementById('seznam-testu-rekruta');
+                if (!kontejner) return;
+                kontejner.innerHTML = '';
+                testy.forEach(test => {
+                    kontejner.innerHTML += `<div style="border-bottom: 1px solid var(--border-color); padding: 16px 0; display: flex; justify-content: space-between; align-items: center;"><strong style="color: #e4e4e7;">${test.nazev}</strong><span id="stav-testu-${test.id}">...</span></div>`;
+                    nactiStavTestu(id, test.id);
+                });
+            });
+
+            fetch(`/api/rekruti/${id}/zaznamy`, { cache: 'no-store' }).then(res => res.json()).then(zaznamy => {
+                pametHistorie = zaznamy;
+                const tabHist = document.getElementById('tabulka-historie');
+                if (!tabHist) return;
+                if (zaznamy.length === 0) {
+                    tabHist.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Žádné záznamy.</td></tr>';
+                    return;
+                }
+                let novyHtml = '';
+                zaznamy.forEach(z => {
+                    const d = new Date(z.datum);
+                    const datumText = d.toLocaleDateString('cs-CZ') + ' ' + d.toLocaleTimeString('cs-CZ', {hour: '2-digit', minute:'2-digit'});
+                    const stitek = z.prosel ? '<span class="badge badge-success">Splněno</span>' : '<span class="badge badge-default" style="color: var(--color-danger); border-color: rgba(220, 38, 38, 0.3);">Nesplněno</span>';
+                    novyHtml += `<tr><td style="color: var(--text-muted); font-size: 13px;">${datumText}</td><td><strong style="color: #fff;">${z.nazev}</strong></td><td>${stitek} <strong style="color: ${z.prosel ? '#4ade80' : '#f87171'}; margin-left: 10px;">${z.procenta}%</strong></td><td style="text-align: center;"><button class="btn btn-nav" style="margin: 0; padding: 6px 12px; font-size: 12px;" onclick="ukazDetailZaznamu(${z.id})"><i class="fa-solid fa-magnifying-glass"></i></button></td></tr>`;
+                });
+                tabHist.innerHTML = novyHtml;
+            });
+        }
+
+        function ukazDetailZaznamu(idZaznamu) {
+            const zaznam = pametHistorie.find(z => z.id === idZaznamu);
+            if (!zaznam) return;
+            const odpovediRekruta = typeof zaznam.odpovedi === 'string' ? JSON.parse(zaznam.odpovedi) : zaznam.odpovedi;
+            const d = new Date(zaznam.datum);
+            document.getElementById('zaznam-modal').style.display = 'flex';
+            document.getElementById('modal-nadpis').innerText = zaznam.nazev;
+            document.getElementById('modal-podnadpis').innerText = `Odevzdáno: ${d.toLocaleDateString('cs-CZ')} ${d.toLocaleTimeString('cs-CZ', {hour: '2-digit', minute:'2-digit'})} | Dosaženo: ${zaznam.procenta}%`;
+
+            const kontejner = document.getElementById('modal-otazky');
+            if (!kontejner) return;
+            kontejner.innerHTML = 'Načítám...';
+            fetch(`/api/admin/testy/${zaznam.id_testu}/otazky`, { cache: 'no-store' }).then(res => res.json()).then(otazkyDb => {
+                let novyHtml = '';
+                otazkyDb.forEach((o, index) => {
+                    const jeSpravne = odpovediRekruta[o.id] === o.spravna_odpoved;
+                    novyHtml += `
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid ${jeSpravne ? 'rgba(22, 163, 74, 0.3)' : 'rgba(220, 38, 38, 0.3)'}; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                            <p style="margin: 0 0 10px 0; color: #fff; font-weight: 500;">${index + 1}. ${o.zneni}</p>
+                            <div style="display: flex; gap: 10px; align-items: flex-start; color: var(--text-muted); font-size: 13px;">
+                                <span>${jeSpravne ? '<i class="fa-solid fa-check" style="color: #4ade80;"></i>' : '<i class="fa-solid fa-xmark" style="color: #f87171;"></i>'}</span>
+                                <div>
+                                    <span><strong>Zvolil:</strong> <span style="color: ${jeSpravne ? '#4ade80' : '#f87171'}">${o['odpoved_' + odpovediRekruta[o.id]] || 'Nevyplněno'}</span></span><br>
+                                    ${!jeSpravne ? `<span><strong>Správně:</strong> ${o['odpoved_' + o.spravna_odpoved]}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>`;
+                });
+                kontejner.innerHTML = novyHtml;
+            });
+        }
+
+        function zavriModal() { document.getElementById('zaznam-modal').style.display = 'none'; }
+
+        function zmenHodnost() {
+            fetch(`/api/rekruti/${aktualniIdRekruta}/hodnost`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hodnost: document.getElementById('detail-zmena-hodnosti').value, id_admina: prihlasenyAdmin.id })
+            }).then(() => nactiTabulkuRekrutu());
+        }
+
+        function nactiStavTestu(idRekruta, idTestu) {
+            fetch(`/api/stav/${idRekruta}/${idTestu}`, { cache: 'no-store' }).then(res => res.json()).then(data => {
+                const box = document.getElementById(`stav-testu-${idTestu}`);
+                if (!box) return;
+                if (data.stav === 0) box.innerHTML = `<button class="btn btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="odemkniTest(${idRekruta}, ${idTestu})">Odemknout</button>`;
+                else if (data.stav === 1) box.innerHTML = '<span class="badge badge-warning">Čeká na splnění</span>';
+                else box.innerHTML = '<span class="badge badge-success">Schváleno</span>';
+            });
+        }
+
+        function odemkniTest(idR, idT) {
+            fetch('/api/odemknout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_rekruta: idR, id_testu: idT, id_admina: prihlasenyAdmin.id })
+            }).then(() => nactiStavTestu(idR, idT));
+        }
+
+        function smazatRekrutaZeSeznamu(id) { if (confirm('Smazat?')) fetch(`/api/rekruti/${id}`, { method: 'DELETE' }).then(() => nactiTabulkuRekrutu()); }
+
+        document.getElementById('formNovyTest').addEventListener('submit', (e) => {
+            e.preventDefault();
+            fetch('/api/testy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nazev: document.getElementById('nazevTestu').value, popis: document.getElementById('popisTestu').value })
+            }).then(() => { document.getElementById('formNovyTest').reset(); nactiTabulkuTestu(); });
+        });
+
+        function nactiTabulkuTestu() {
+            fetch('/api/testy', { cache: 'no-store' }).then(res => res.json()).then(testy => {
+                const tab = document.getElementById('tabulka-testu');
+                if (!tab) return;
+                let novyHtml = '';
+                testy.forEach(t => {
+                    novyHtml += `<tr><td><strong style="color: #fff;">${t.nazev}</strong><br><small style="color: #a1a1aa;">${t.popis}</small></td><td style="text-align: center;"><div class="dropdown"><button class="dropdown-btn" onclick="toggleDropdown('drop-test-${t.id}')">⋮</button><div id="drop-test-${t.id}" class="dropdown-content"><button class="dropdown-item" onclick="otevriEditaciTestu(${t.id}, '${t.nazev}')">Upravit test</button><button class="dropdown-item danger" onclick="smazatTest(${t.id})">Smazat test</button></div></div></td></tr>`;
+                });
+                tab.innerHTML = novyHtml;
+            });
+        }
+
+        function smazatTest(id) { if (confirm('Smazat modul?')) fetch(`/api/testy/${id}`, { method: 'DELETE' }).then(() => nactiTabulkuTestu()); }
+
+        function otevriEditaciTestu(id, nazev) {
+            aktualniIdTestuEditor = id;
+            otevriSekci('editace-testu', null);
+            document.getElementById('editace-nadpis').innerText = 'Zadání: ' + nazev;
+            nactiOtazkyKTestu(id);
+        }
+
+        function nactiOtazkyKTestu(id) {
+            fetch(`/api/admin/testy/${id}/otazky`, { cache: 'no-store' }).then(res => res.json()).then(otazky => {
+                const list = document.getElementById('seznam-otazek');
+                if (!list) return;
+                let novyHtml = '';
+                otazky.forEach(o => {
+                    novyHtml += `<li style="border-bottom: 1px solid var(--border-color); padding: 16px 0; display: flex; justify-content: space-between; align-items: center;"><div><strong style="color: #fff; display: block; margin-bottom: 4px;">${o.zneni}</strong><span style="color: #a1a1aa; font-size: 13px;">A) ${o.odpoved_a} | B) ${o.odpoved_b} | C) ${o.odpoved_c} (Správně: ${o.spravna_odpoved.toUpperCase()})</span></div><button class="btn btn-danger" onclick="smazatOtazku(${o.id})"><i class="fa-solid fa-trash"></i></button></li>`;
+                });
+                list.innerHTML = novyHtml;
+            });
+        }
+
+        function smazatOtazku(id) { if (confirm('Odstranit?')) fetch(`/api/otazky/${id}`, { method: 'DELETE' }).then(() => nactiOtazkyKTestu(aktualniIdTestuEditor)); }
+
+        document.getElementById('formNovaOtazka').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const p = {
+                id_testu: aktualniIdTestuEditor, zneni: document.getElementById('zneniOtazky').value, a: document.getElementById('odpovedA').value, b: document.getElementById('odpovedB').value, c: document.getElementById('odpovedC').value, spravna: document.querySelector('input[name="spravnaOdpoved"]:checked').value
+            };
+            fetch('/api/otazky', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) }).then(() => { document.getElementById('formNovaOtazka').reset(); nactiOtazkyKTestu(aktualniIdTestuEditor); });
+        });
+
+        document.getElementById('formNovyMaterial').addEventListener('submit', (e) => {
+            e.preventDefault();
+            fetch('/api/materialy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nazev: document.getElementById('nazevMaterialu').value, popis: document.getElementById('popisMaterialu').value })
+            }).then(() => { document.getElementById('formNovyMaterial').reset(); nactiTabulkuMaterialu(); });
+        });
+
+        function nactiTabulkuMaterialu() {
+            fetch('/api/materialy', { cache: 'no-store' }).then(res => res.json()).then(mat => {
+                const tab = document.getElementById('tabulka-materialu');
+                if (!tab) return;
+                if (mat.length === 0) { tab.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Zatím nejsou vytvořeny žádné manuály.</td></tr>'; return; }
+                let novyHtml = '';
+                mat.forEach(m => {
+                    novyHtml += `<tr>
+                        <td><strong style="color: #fff;">${m.nazev}</strong></td>
+                        <td><span style="color: var(--text-muted); font-size: 13px;">${m.popis}</span></td>
+                        <td style="text-align: center;">
+                            <div class="dropdown">
+                                <button class="dropdown-btn" onclick="toggleDropdown('drop-mat-${m.id}')">⋮</button>
+                                <div id="drop-mat-${m.id}" class="dropdown-content" style="right: 30px;">
+                                    <button class="dropdown-item" onclick="otevriEditaciMaterialu(${m.id}, '${m.nazev}')"><i class="fa-solid fa-pen-to-square"></i> Upravit kapitoly</button>
+                                    <button class="dropdown-item danger" onclick="smazatMaterial(${m.id})"><i class="fa-solid fa-trash"></i> Smazat manuál</button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>`;
+                });
+                tab.innerHTML = novyHtml;
+            });
+        }
+
+        function smazatMaterial(id) { if (confirm('Opravdu smazat celý manuál včetně všech kapitol a PDF souborů?')) fetch(`/api/materialy/${id}`, { method: 'DELETE' }).then(() => nactiTabulkuMaterialu()); }
+
+        function otevriEditaciMaterialu(id, nazev) {
+            aktualniIdMaterialuEditor = id;
+            editovanaKapitolaId = null;
+            previewExistujiciObrazky = [];
+            existujiciPdfUrl = null;
+            otevriSekci('editace-materialu', null);
+
+            document.getElementById('material-detail-nazev').value = nazev;
+            document.getElementById('editace-mat-nadpis').innerText = 'Správa kapitol: ' + nazev;
+            document.getElementById('nazevKapitoly').value = '';
+            document.getElementById('obrazkyKapitoly').value = '';
+            document.getElementById('pdfKapitoly').value = '';
+            document.getElementById('ukazka-pdf').innerText = '';
+
+            document.getElementById('typObsahuKapitoly').value = 'pdf';
+            prepniTypObsahu();
+
+            document.getElementById('btn-submit-kapitola').innerText = 'Přidat kapitolu';
+            document.getElementById('btn-cancel-kapitola').style.display = 'none';
+
+            if (!ckEditorInstance) initCKEditor();
+            setTimeout(() => { nactiKapitoly(id); renderPreview(); }, 150);
+        }
+
+        function nactiKapitoly(idMat) {
+            if (!idMat) return;
+            fetch(`/api/materialy/${idMat}/kapitoly`, { cache: 'no-store' }).then(res => res.json()).then(kapitoly => {
                 pametKapitol = Array.isArray(kapitoly) ? kapitoly : [];
                 const list = document.getElementById('seznam-kapitol');
                 const pocet = document.getElementById('pocet-kapitol');
@@ -1008,20 +674,20 @@ document.getElementById('formNovyRekrut').addEventListener('submit', (e) => {
 
                 pocet.innerText = `${pametKapitol.length} kapitol`;
 
-                if (pametKapitol.length === 0) {
-                    list.innerHTML = '<li style="color: var(--text-muted); font-style: italic;">Manuál zatím nemá žádné kapitoly.</li>';
-                    return;
-                }
+                if (pametKapitol.length === 0) { list.innerHTML = '<li style="color: var(--text-muted); font-style: italic;">Manuál zatím nemá žádné kapitoly.</li>'; return; }
                 
                 let novyHtml = '';
                 pametKapitol.forEach(k => {
+                    const jePdf = k.obsah && k.obsah.endsWith('.pdf');
+                    const infoObsah = jePdf ? `<span style="color: var(--color-success); font-weight: 500;"><i class="fa-solid fa-file-pdf"></i> PDF Dokument nahraný</span>` : `${(k.obsah || '').replace(/<[^>]+>/g, '').substring(0, 150)}...`;
                     const imgs = Array.isArray(k.obrazky) ? k.obrazky : [];
+                    
                     novyHtml += `
                         <li class="chapter-list-item">
                             <div style="flex: 1;">
                                 <strong style="color: #bfae95; display: block; margin-bottom: 6px; font-size: 15px;">${k.nazev_kapitoly}</strong>
-                                <p style="color: var(--text-normal); font-size: 13px; margin: 0; white-space: pre-line;">${(k.obsah || '').replace(/<[^>]+>/g, '').substring(0, 150)}...</p>
-                                <div class="mini-muted" style="margin-top: 8px;">${imgs.length} obrázků</div>
+                                <p style="color: var(--text-normal); font-size: 13px; margin: 0; white-space: pre-line;">${infoObsah}</p>
+                                ${!jePdf && imgs.length > 0 ? `<div class="mini-muted" style="margin-top: 8px;">${imgs.length} obrázků</div>` : ''}
                             </div>
                             <div style="display: flex; gap: 10px;">
                                 <button class="btn btn-nav" style="margin: 0; padding: 6px 12px;" onclick="editovatKapitolu(${k.id})"><i class="fa-solid fa-pen"></i></button>
@@ -1030,122 +696,147 @@ document.getElementById('formNovyRekrut').addEventListener('submit', (e) => {
                         </li>`;
                 });
                 list.innerHTML = novyHtml;
-            })
-            .catch(err => console.error('Chyba při načítání kapitol:', err));
-    }
-
-    function renderPreview() {
-        const titleInput = document.getElementById('nazevKapitoly');
-        const titleBox = document.getElementById('preview-nadpis');
-        const contentBox = document.getElementById('preview-obsah');
-        const box = document.getElementById('preview-obrazky');
-
-        if (titleBox) titleBox.innerText = (titleInput && titleInput.value) ? titleInput.value : 'Název kapitoly';
-        if (contentBox) {
-            contentBox.innerHTML = ckEditorInstance ? (ckEditorInstance.getData() || '<span style="color: var(--text-muted);">Náhled obsahu kapitoly...</span>') : '<span style="color: var(--text-muted);">Náhled obsahu kapitoly...</span>';
-        }
-        if (!box) return;
-
-        box.innerHTML = '';
-
-        if (previewExistujiciObrazky && previewExistujiciObrazky.length > 0) {
-            previewExistujiciObrazky.forEach(url => {
-                box.innerHTML += `<img src="${url}" alt="existující obrázek">`;
             });
         }
 
-        const fileInput = document.getElementById('obrazkyKapitoly');
-        if (fileInput && fileInput.files && fileInput.files.length > 0) {
-            Array.from(fileInput.files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    box.innerHTML += `<img src="${e.target.result}" alt="preview">`;
-                };
-                reader.readAsDataURL(file);
-            });
-        } else if ((!previewExistujiciObrazky || previewExistujiciObrazky.length === 0)) {
-            box.innerHTML = '<span style="color: var(--text-muted); font-size: 13px;">Vybrané obrázky se zobrazí tady.</span>';
-        }
-    }
+        // --- UPRAVENÝ RENDER PREVIEW PRO PDF.JS ---
+        // --- UPRAVENÝ RENDER PREVIEW PRO ČISTÉ CELISTVÉ PDF ---
+        function renderPreview() {
+            const titleBox = document.getElementById('preview-nadpis');
+            const contentBox = document.getElementById('preview-obsah');
+            const box = document.getElementById('preview-obrazky');
+            const typ = document.getElementById('typObsahuKapitoly').value;
 
-    document.getElementById('nazevKapitoly').addEventListener('input', renderPreview);
-    document.getElementById('obrazkyKapitoly').addEventListener('change', renderPreview);
+            if (titleBox) titleBox.innerText = document.getElementById('nazevKapitoly').value || 'Název kapitoly';
+            
+            box.innerHTML = '';
 
-    function editovatKapitolu(id) {
-        const kap = pametKapitol.find(k => k.id === id);
-        if (!kap) return;
+            if (typ === 'pdf') {
+                const pdfInput = document.getElementById('pdfKapitoly');
+                let pdfUrlToRender = null;
+                
+                if (pdfInput.files && pdfInput.files.length > 0) {
+                    const soubor = pdfInput.files[0];
+                    pdfUrlToRender = URL.createObjectURL(soubor);
+                    document.getElementById('ukazka-pdf').innerText = "Vybráno: " + soubor.name;
+                } else if (existujiciPdfUrl) {
+                    pdfUrlToRender = existujiciPdfUrl;
+                } else {
+                    contentBox.innerHTML = '<span style="color: var(--text-muted);"><i class="fa-solid fa-file-arrow-up"></i> Vyberte PDF soubor pro kapitolu...</span>';
+                    document.getElementById('ukazka-pdf').innerText = "";
+                    return;
+                }
 
-        editovanaKapitolaId = id;
-        document.getElementById('nazevKapitoly').value = kap.nazev_kapitoly;
-        if (ckEditorInstance) ckEditorInstance.setData(kap.obsah || '');
-        document.getElementById('obrazkyKapitoly').value = '';
-        document.getElementById('btn-submit-kapitola').innerText = 'Uložit změny';
-        document.getElementById('btn-cancel-kapitola').style.display = 'inline-block';
+                // CSS trik: Obalíme iframe do kontejneru, který ořízne tu horní šedou lištu prohlížeče
+                // #toolbar=0&view=FitH zajistí skrytí nástrojů a přizpůsobení šířce
+                contentBox.innerHTML = `
+                    <div style="width: 100%; height: 600px; overflow: hidden; position: relative; border-radius: 8px; border: 1px solid var(--border-color); background: #222;">
+                        <iframe src="${pdfUrlToRender}#toolbar=0&navpanes=0&view=FitH" width="102%" height="660px" style="position: absolute; top: -60px; left: -12px; border: none; background: #222;"></iframe>
+                    </div>
+                
+                `;
 
-        previewExistujiciObrazky = Array.isArray(kap.obrazky) ? kap.obrazky : [];
-        renderPreview();
-    }
-
-    function zrusitEditaciKapitoly() {
-        editovanaKapitolaId = null;
-        previewExistujiciObrazky = [];
-
-        const title = document.getElementById('nazevKapitoly');
-        if (title) title.value = '';
-
-        const file = document.getElementById('obrazkyKapitoly');
-        if (file) file.value = '';
-
-        if (ckEditorInstance) ckEditorInstance.setData('');
-
-        document.getElementById('btn-submit-kapitola').innerText = 'Přidat kapitolu';
-        document.getElementById('btn-cancel-kapitola').style.display = 'none';
-        renderPreview();
-    }
-
-    function ulozKapitolu() {
-        if (!aktualniIdMaterialuEditor) {
-            alert('Nejdřív vyber manuál.');
-            return;
+            } else {
+                if (contentBox) contentBox.innerHTML = ckEditorInstance ? (ckEditorInstance.getData() || '<span style="color: var(--text-muted);">Náhled obsahu kapitoly...</span>') : '';
+                if (previewExistujiciObrazky && previewExistujiciObrazky.length > 0) {
+                    previewExistujiciObrazky.forEach(url => { box.innerHTML += `<img src="${url}" alt="existující obrázek">`; });
+                }
+                const fileInput = document.getElementById('obrazkyKapitoly');
+                if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                    Array.from(fileInput.files).forEach(file => {
+                        const reader = new FileReader();
+                        reader.onload = e => { box.innerHTML += `<img src="${e.target.result}" alt="preview">`; };
+                        reader.readAsDataURL(file);
+                    });
+                }
+            }
         }
 
-        const obs = ckEditorInstance ? ckEditorInstance.getData() : '';
-        const formData = new FormData();
-        formData.append('id_materialu', aktualniIdMaterialuEditor);
-        formData.append('nazev_kapitoly', document.getElementById('nazevKapitoly').value);
-        formData.append('obsah', obs);
+        document.getElementById('nazevKapitoly').addEventListener('input', renderPreview);
 
-        const fileInput = document.getElementById('obrazkyKapitoly');
-        if (fileInput && fileInput.files) {
-            for (const file of fileInput.files) formData.append('obrazky', file);
+        function editovatKapitolu(id) {
+            const kap = pametKapitol.find(k => k.id === id);
+            if (!kap) return;
+
+            editovanaKapitolaId = id;
+            document.getElementById('nazevKapitoly').value = kap.nazev_kapitoly;
+            
+            const jePdf = kap.obsah && kap.obsah.endsWith('.pdf');
+            document.getElementById('typObsahuKapitoly').value = jePdf ? 'pdf' : 'text';
+            prepniTypObsahu();
+
+            if (jePdf) {
+                existujiciPdfUrl = kap.obsah;
+                document.getElementById('ukazka-pdf').innerText = "Aktuálně nahráno: " + kap.obsah.split('/').pop();
+                document.getElementById('pdfKapitoly').value = '';
+                if (ckEditorInstance) ckEditorInstance.setData('');
+            } else {
+                existujiciPdfUrl = null;
+                if (ckEditorInstance) ckEditorInstance.setData(kap.obsah || '');
+                document.getElementById('ukazka-pdf').innerText = "";
+                previewExistujiciObrazky = Array.isArray(kap.obrazky) ? kap.obrazky : [];
+                document.getElementById('obrazkyKapitoly').value = '';
+            }
+
+            document.getElementById('btn-submit-kapitola').innerText = 'Uložit změny';
+            document.getElementById('btn-cancel-kapitola').style.display = 'inline-block';
+            renderPreview();
         }
 
-        const url = editovanaKapitolaId ? `/api/kapitoly/${editovanaKapitolaId}` : '/api/kapitoly';
-        const method = editovanaKapitolaId ? 'PUT' : 'POST';
+        function zrusitEditaciKapitoly() {
+            editovanaKapitolaId = null;
+            previewExistujiciObrazky = [];
+            existujiciPdfUrl = null;
 
-        fetch(url, { method, body: formData })
-            .then(async res => {
+            document.getElementById('nazevKapitoly').value = '';
+            document.getElementById('obrazkyKapitoly').value = '';
+            document.getElementById('pdfKapitoly').value = '';
+            document.getElementById('ukazka-pdf').innerText = '';
+            if (ckEditorInstance) ckEditorInstance.setData('');
+
+            document.getElementById('btn-submit-kapitola').innerText = 'Přidat kapitolu';
+            document.getElementById('btn-cancel-kapitola').style.display = 'none';
+            renderPreview();
+        }
+
+        function ulozKapitolu() {
+            if (!aktualniIdMaterialuEditor) { alert('Nejdřív vyber manuál.'); return; }
+
+            const formData = new FormData();
+            formData.append('id_materialu', aktualniIdMaterialuEditor);
+            formData.append('nazev_kapitoly', document.getElementById('nazevKapitoly').value);
+            
+            const typObsahu = document.getElementById('typObsahuKapitoly').value;
+            formData.append('typ_obsahu', typObsahu);
+
+            if (typObsahu === 'pdf') {
+                const pdfInput = document.getElementById('pdfKapitoly');
+                if (pdfInput.files[0]) formData.append('pdfSoubor', pdfInput.files[0]);
+                formData.append('obsah_existujici', existujiciPdfUrl || '');
+            } else {
+                const obs = ckEditorInstance ? ckEditorInstance.getData() : '';
+                formData.append('obsah', obs);
+                const fileInput = document.getElementById('obrazkyKapitoly');
+                if (fileInput && fileInput.files) {
+                    for (const file of fileInput.files) formData.append('obrazky', file);
+                }
+            }
+
+            const url = editovanaKapitolaId ? `/api/kapitoly/${editovanaKapitolaId}` : '/api/kapitoly';
+            const method = editovanaKapitolaId ? 'PUT' : 'POST';
+
+            fetch(url, { method, body: formData }).then(async res => {
                 const data = await res.json().catch(() => ({}));
                 if (!res.ok || data.uspech === false) throw new Error(data.chyba || 'Uložení se nezdařilo.');
                 zrusitEditaciKapitoly();
                 nactiKapitoly(aktualniIdMaterialuEditor);
-            })
-            .catch(err => {
-                console.error('Chyba při ukládání kapitoly:', err);
-                alert('Kapitolu se nepodařilo uložit.');
-            });
-    }
-
-    function smazatKapitolu(id) {
-        if (confirm('Odstranit tuto kapitolu?')) {
-            fetch(`/api/kapitoly/${id}`, { method: 'DELETE' }).then(() => nactiKapitoly(aktualniIdMaterialuEditor));
+            }).catch(err => { alert('Chybu při ukládání: ' + err.message); });
         }
-    }
 
-    function nactiStavZamku() {
-        fetch('/api/admin/stav-materialu', { cache: 'no-store' })
-            .then(r => r.json())
-            .then(data => {
+        function smazatKapitolu(id) { if (confirm('Odstranit tuto kapitolu?')) fetch(`/api/kapitoly/${id}`, { method: 'DELETE' }).then(() => nactiKapitoly(aktualniIdMaterialuEditor)); }
+
+        function nactiStavZamku() {
+            fetch('/api/admin/stav-materialu', { cache: 'no-store' }).then(r => r.json()).then(data => {
                 const btn = document.getElementById('btn-lock-mat');
                 if (data.uzamceno) {
                     btn.innerText = "Odemknout manuály pro rekruty";
@@ -1157,58 +848,64 @@ document.getElementById('formNovyRekrut').addEventListener('submit', (e) => {
                     btn.onclick = () => nastavZamek(true);
                 }
             });
-    }
+        }
 
-    function nastavZamek(stav) {
-        fetch('/api/admin/toggle-materialy', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ je_admin: prihlasenyAdmin.je_admin, uzamceno: stav, id_admina: prihlasenyAdmin.id })
-        }).then(() => nactiStavZamku());
-    }
+        function nastavZamek(stav) {
+            fetch('/api/admin/toggle-materialy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ je_admin: prihlasenyAdmin.je_admin, uzamceno: stav, id_admina: prihlasenyAdmin.id })
+            }).then(() => nactiStavZamku());
+        }
 
-    function nactiLogy() {
-        fetch('/api/admin/logy', { cache: 'no-store' })
-            .then(res => res.json())
-            .then(logy => {
+        function nactiLogy() {
+            fetch('/api/admin/logy', { cache: 'no-store' }).then(res => res.json()).then(logy => {
                 const tab = document.getElementById('tabulka-logu');
                 if (!tab) return;
-                
-                if (logy.length === 0) {
-                    tab.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Zatím nejsou zaznamenány žádné události.</td></tr>';
-                    return;
-                }
-                
+                if (logy.length === 0) { tab.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Zatím nejsou zaznamenány žádné události.</td></tr>'; return; }
                 let novyHtml = '';
                 logy.forEach(l => {
                     const d = new Date(l.datum);
                     const datumText = d.toLocaleDateString('cs-CZ') + ' ' + d.toLocaleTimeString('cs-CZ', {hour: '2-digit', minute:'2-digit'});
-                    const jmeno = l.jmeno ? `<strong style="color: #fff;">${l.jmeno}</strong>` : '<span style="color: #a1a1aa; font-style: italic;">Systém</span>';
-                    
-                    novyHtml += `
-                        <tr>
-                            <td style="color: var(--text-muted); font-size: 13px;">${datumText}</td>
-                            <td>${jmeno}</td>
-                            <td style="color: var(--text-normal); font-size: 14px;">${l.akce}</td>
-                        </tr>
-                    `;
+                    const jmeno = l.jmeno ? `<strong style="color: #fff;">${l.jmeno}</strong>` : '<span style="color: #a1a1aa; font-style: italic;">Systém / Smazaný profil</span>';
+                    novyHtml += `<tr><td style="color: var(--text-muted); font-size: 13px;">${datumText}</td><td>${jmeno}</td><td style="color: var(--text-normal); font-size: 14px;">${l.akce}</td></tr>`;
                 });
-                tab.innerHTML = novyHtml; // Překreslí vše rychle a bez probliknutí
+                tab.innerHTML = novyHtml;
+                filtrujLogy(); 
             });
-    }
-
-    // --- AUTO-REFRESH LOGŮ (KAŽDÝCH 5 SEKUND) ---
-    setInterval(() => {
-        const aktivniSekce = document.querySelector('.sekce-obsah.aktivni');
-        if (aktivniSekce && aktivniSekce.id === 'logy') {
-            nactiLogy();
         }
-    }, 5000);
 
-    nactiTabulkuRekrutu();
-    initCKEditor();
-    renderPreview();
-    nactiStavZamku();
-</script>
+        let aktualniLogFiltr = '';
+
+        function nastavFiltrLogu(btn, klicoveSlovo) {
+            const tlacitka = document.getElementById('log-filters').querySelectorAll('button');
+            tlacitka.forEach(t => {
+                t.style.borderColor = 'rgba(255,255,255,0.1)';
+                t.style.color = 'var(--text-muted)';
+            });
+            btn.style.borderColor = '#bfae95';
+            btn.style.color = '#fff';
+            aktualniLogFiltr = klicoveSlovo.toLowerCase();
+            filtrujLogy();
+        }
+
+        function filtrujLogy() {
+            const hledanyText = document.getElementById('log-search').value.toLowerCase();
+            const radky = document.getElementById('tabulka-logu').getElementsByTagName('tr');
+
+            for (let i = 0; i < radky.length; i++) {
+                if (radky[i].cells.length === 1) continue; 
+                const textRadku = radky[i].textContent.toLowerCase();
+                const splnujeHledani = textRadku.includes(hledanyText);
+                const splnujeKategorii = textRadku.includes(aktualniLogFiltr);
+
+                if (splnujeHledani && splnujeKategorii) {
+                    radky[i].style.display = '';
+                } else {
+                    radky[i].style.display = 'none';
+                }
+            }
+        }
+
+        setInterval(() => { const a = document.querySelector('.sekce-obsah.aktivni'); if (a && a.id === 'logy') nactiLogy(); }, 5000);
+        nactiTabulkuRekrutu(); initCKEditor(); nactiStavZamku();
+    </script>
 </body>
 </html>
