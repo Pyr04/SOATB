@@ -150,16 +150,22 @@
         
         fetch('/api/materialy?admin=' + prihlaseny.je_admin, { cache: 'no-store' }).then(async res => {
             if (res.status === 403) {
-                kontejner.innerHTML = '<div style="padding: 30px; background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.3); border-radius: 8px; color: var(--color-danger); text-align: center;"><i class="fa-solid fa-lock" style="font-size: 32px; margin-bottom: 15px;"></i><br><b style="font-size: 18px;">Přístup odepřen</b><br><span style="color: var(--text-muted); font-size: 14px;">Velení dočasně uzamklo studijní materiály (probíhá certifikační zkouška).</span></div>';
+                // Pokud je zamčeno, okamžitě překreslíme obsah na červenou tabulku se zámkem (pokud už tam není)
+                if (!kontejner.innerHTML.includes('Přístup odepřen')) {
+                    kontejner.innerHTML = '<div style="padding: 30px; background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.3); border-radius: 8px; color: var(--color-danger); text-align: center;"><i class="fa-solid fa-lock" style="font-size: 32px; margin-bottom: 15px;"></i><br><b style="font-size: 18px;">Přístup odepřen</b><br><span style="color: var(--text-muted); font-size: 14px;">Velení dočasně uzamklo studijní materiály (probíhá certifikační zkouška).</span></div>';
+                }
                 return null;
             }
             return res.json();
         }).then(materialy => {
             if (!materialy) return; 
+            
+            // Pokud bylo odemčeno a předtím tam byl zámek, nebo se načítá poprvé:
             if(materialy.length === 0) {
                 kontejner.innerHTML = '<p style="color: var(--text-muted); font-style: italic;">Velení zatím nevložilo žádné studijní materiály.</p>';
                 return;
             }
+            
             let novyHtml = '';
             materialy.forEach(m => {
                 novyHtml += `
@@ -170,7 +176,14 @@
                     </div>
                 `;
             });
-            kontejner.innerHTML = novyHtml;
+            
+            // Překreslíme seznam jen tehdy, pokud se liší od aktuálního (zabrání zbytečnému blikání)
+            if (kontejner.innerHTML !== novyHtml && !kontejner.innerHTML.includes('Přístup odepřen')) {
+                kontejner.innerHTML = novyHtml;
+            } else if (kontejner.innerHTML.includes('Přístup odepřen')) {
+                // Pokud velení mezitím zámek vypnulo, rovnou to rekrutovi naskočí zpět
+                kontejner.innerHTML = novyHtml;
+            }
         });
     }
 </script>
